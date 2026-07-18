@@ -2,7 +2,7 @@
 "menu.show" = "Show Quota Window";
 "menu.refresh" = "Refresh Now";
 "menu.settings" = "Settings…";
-"menu.quit" = "Quit QuotaDot";
+"menu.quit" = "Quit QuotaPulse";
 "menu.weekly.short" = "week";
 
 "header.switchLanguage" = "Switch language";
@@ -40,7 +40,7 @@
 "settings.quotaNotification.detail" = "Intervals and the breakpoint must be integers from 1–99. The default is every 10%, with at most two stages.";
 "settings.quotaNotification.status.saved" = "Saved";
 "settings.quotaNotification.status.invalid" = "Enter valid whole numbers";
-"notification.daily.title" = "QuotaDot Reminder";
+"notification.daily.title" = "QuotaPulse Reminder";
 "notification.snooze.10m" = "Snooze 10 Minutes";
 "notification.snooze.1h" = "Snooze 1 Hour";
 
@@ -105,9 +105,9 @@
 "settings.chinese" = "简体中文";
 "settings.english" = "English";
 "settings.launchAtLogin" = "Launch at login";
-"settings.launchAtLogin.detail" = "Start QuotaDot after you sign in to your Mac and keep the menu bar and floating quota available.";
+"settings.launchAtLogin.detail" = "Start QuotaPulse after you sign in to your Mac and keep the menu bar and floating quota available.";
 "settings.systemStatus" = "System status";
-"settings.approvalRequired" = "macOS needs you to allow QuotaDot in System Settings.";
+"settings.approvalRequired" = "macOS needs you to allow QuotaPulse in System Settings.";
 "settings.openLoginItems" = "Open Login Items";
 "settings.data" = "Data";
 "settings.quotaSource" = "Quota source";

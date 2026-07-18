@@ -9,8 +9,8 @@ elif [[ $# -gt 0 ]]; then
   exit 2
 fi
 
-APP_NAME="QuotaDot"
-VERSION="${QUOTADOT_VERSION:-0.1.0}"
+APP_NAME="QuotaPulse"
+VERSION="${QUOTAPULSE_VERSION:-0.1.0}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIST_DIR="$ROOT_DIR/dist/release"
 APP_BUNDLE="$DIST_DIR/$APP_NAME.app"
@@ -30,7 +30,7 @@ if [[ "$MODE" == "notarized" ]]; then
   xcrun stapler validate "$APP_BUNDLE"
   DMG_PATH="$DIST_DIR/$APP_NAME-$VERSION.dmg"
 else
-  QUOTADOT_ALLOW_ADHOC=1 QUOTADOT_SIGNING_IDENTITY=- \
+  QUOTAPULSE_ALLOW_ADHOC=1 QUOTAPULSE_SIGNING_IDENTITY=- \
     "$ROOT_DIR/script/assemble_app.sh" release "$APP_BUNDLE" >/dev/null
   DMG_PATH="$DIST_DIR/$APP_NAME-$VERSION-UNSIGNED.dmg"
 fi
@@ -41,7 +41,7 @@ ln -s /Applications "$STAGING_DIR/Applications"
 hdiutil create -quiet -volname "$APP_NAME" -srcfolder "$STAGING_DIR" -ov -format UDZO "$DMG_PATH"
 
 if [[ "$MODE" == "notarized" ]]; then
-  SIGNING_IDENTITY="${QUOTADOT_SIGNING_IDENTITY:-}"
+  SIGNING_IDENTITY="${QUOTAPULSE_SIGNING_IDENTITY:-}"
   if [[ -z "$SIGNING_IDENTITY" ]]; then
     SIGNING_IDENTITY="$(security find-identity -v -p codesigning 2>/dev/null \
       | sed -n 's/.*"\(Developer ID Application: [^"]*\)".*/\1/p' \

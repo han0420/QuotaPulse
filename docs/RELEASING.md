@@ -1,6 +1,6 @@
 # Release Guide
 
-QuotaDot's public DMG must be signed with a **Developer ID Application** certificate and notarized by Apple. Apple Development, Apple Distribution, and ad-hoc signatures are not substitutes for direct distribution outside the Mac App Store.
+QuotaPulse's public DMG must be signed with a **Developer ID Application** certificate and notarized by Apple. Apple Development, Apple Distribution, and ad-hoc signatures are not substitutes for direct distribution outside the Mac App Store.
 
 ## One-time setup
 
@@ -9,7 +9,7 @@ QuotaDot's public DMG must be signed with a **Developer ID Application** certifi
 3. Store the credentials in a local keychain profile:
 
 ```bash
-xcrun notarytool store-credentials QuotaDotNotary \
+xcrun notarytool store-credentials QuotaPulseNotary \
   --apple-id "APPLE_ID" \
   --team-id "TEAM_ID" \
   --password "APP_SPECIFIC_PASSWORD"
@@ -20,9 +20,9 @@ Never commit signing certificates, private keys, passwords, or notarization cred
 ## Build a public release
 
 ```bash
-export NOTARYTOOL_PROFILE=QuotaDotNotary
-export QUOTADOT_VERSION=0.1.0
-export QUOTADOT_BUILD_NUMBER=1
+export NOTARYTOOL_PROFILE=QuotaPulseNotary
+export QUOTAPULSE_VERSION=0.1.0
+export QUOTAPULSE_BUILD_NUMBER=1
 ./script/package_release.sh
 ```
 

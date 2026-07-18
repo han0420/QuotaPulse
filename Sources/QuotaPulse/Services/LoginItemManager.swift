@@ -8,7 +8,7 @@ final class LoginItemManager {
     private(set) var errorMessage: String?
 
     private let service = SMAppService.mainApp
-    private let logger = Logger(subsystem: "com.cmsjcm.QuotaDot", category: "login-item")
+    private let logger = Logger(subsystem: "com.cmsjcm.QuotaPulse", category: "login-item")
 
     init() {
         refresh()

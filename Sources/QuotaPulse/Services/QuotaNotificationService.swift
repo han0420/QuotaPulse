@@ -25,8 +25,8 @@ enum DailyReminderScheduleResult {
 }
 
 enum ReminderSnoozePolicy {
-    static let tenMinutesActionIdentifier = "QuotaDot.snooze.10m"
-    static let oneHourActionIdentifier = "QuotaDot.snooze.1h"
+    static let tenMinutesActionIdentifier = "QuotaPulse.snooze.10m"
+    static let oneHourActionIdentifier = "QuotaPulse.snooze.1h"
 
     static func delay(for actionIdentifier: String) -> TimeInterval? {
         switch actionIdentifier {
@@ -38,10 +38,10 @@ enum ReminderSnoozePolicy {
 }
 
 final class QuotaNotificationService: NSObject, UNUserNotificationCenterDelegate, @unchecked Sendable {
-    private static let dailyReminderIdentifierPrefix = "com.cmsjcm.QuotaDot.daily-reminder"
-    private static let reminderCategoryIdentifier = "QuotaDot.reminder.actions"
+    private static let dailyReminderIdentifierPrefix = "com.cmsjcm.QuotaPulse.daily-reminder"
+    private static let reminderCategoryIdentifier = "QuotaPulse.reminder.actions"
     private let center: UNUserNotificationCenter
-    private let logger = Logger(subsystem: "com.cmsjcm.QuotaDot", category: "notification")
+    private let logger = Logger(subsystem: "com.cmsjcm.QuotaPulse", category: "notification")
 
     override init() {
         center = .current()

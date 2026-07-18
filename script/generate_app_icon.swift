@@ -6,7 +6,7 @@ import Foundation
 
 private let canvasSize = 1024
 private let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-private let resources = root.appendingPathComponent("Sources/QuotaDot/Resources", isDirectory: true)
+private let resources = root.appendingPathComponent("Sources/QuotaPulse/Resources", isDirectory: true)
 private let pngURL = resources.appendingPathComponent("AppIcon.png")
 private let icnsURL = resources.appendingPathComponent("AppIcon.icns")
 
@@ -165,7 +165,7 @@ guard let masterData = pngData(for: makeIcon(size: canvasSize)) else {
 try masterData.write(to: pngURL, options: .atomic)
 
 let temporaryRoot = FileManager.default.temporaryDirectory
-    .appendingPathComponent("QuotaDot-AppIcon-\(UUID().uuidString)", isDirectory: true)
+    .appendingPathComponent("QuotaPulse-AppIcon-\(UUID().uuidString)", isDirectory: true)
 let iconset = temporaryRoot.appendingPathComponent("AppIcon.iconset", isDirectory: true)
 try FileManager.default.createDirectory(at: iconset, withIntermediateDirectories: true)
 

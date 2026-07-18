@@ -1,6 +1,6 @@
-# QuotaDot 文档地图
+# QuotaPulse 文档地图
 
-本文档目录是 QuotaDot 的工程知识入口。安装和发布面向使用者与维护者；架构和规格文档面向开发者及 AI 编码代理。
+本文档目录是 QuotaPulse 的工程知识入口。安装和发布面向使用者与维护者；架构和规格文档面向开发者及 AI 编码代理。
 
 ## 从哪里开始
 
@@ -27,6 +27,7 @@
 | 运行时中英文本地化 | [specs/localization.md](specs/localization.md) |
 | 登录后自动启动 | [specs/launch-at-login.md](specs/launch-at-login.md) |
 | 凭据与隐私边界 | [specs/credential-and-privacy.md](specs/credential-and-privacy.md) |
+| 品牌名称与兼容迁移 | [specs/brand-identity.md](specs/brand-identity.md) |
 
 ## 文档维护原则
 

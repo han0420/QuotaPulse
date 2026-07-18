@@ -23,9 +23,9 @@ enum ReminderClickAction: Equatable, Sendable {
 }
 
 struct ReminderActionPayload: Equatable, Sendable {
-    static let typeKey = "QuotaDot.action.type"
-    static let valueKey = "QuotaDot.action.value"
-    static let workingDirectoryKey = "QuotaDot.action.workingDirectory"
+    static let typeKey = "QuotaPulse.action.type"
+    static let valueKey = "QuotaPulse.action.value"
+    static let workingDirectoryKey = "QuotaPulse.action.workingDirectory"
 
     let type: ReminderActionType
     let value: String?
@@ -258,16 +258,16 @@ struct DailyReminderConfiguration: Codable, Equatable, Identifiable, Sendable {
     }
 
     var notificationIdentifier: String {
-        "com.cmsjcm.QuotaDot.daily-reminder.\(id.uuidString.lowercased())"
+        "com.cmsjcm.QuotaPulse.daily-reminder.\(id.uuidString.lowercased())"
     }
 }
 
 enum DailyReminderPreferences {
-    private static let remindersKey = "QuotaDot.dailyReminders.v1"
-    private static let enabledKey = "QuotaDot.dailyReminder.enabled"
-    private static let hourKey = "QuotaDot.dailyReminder.hour"
-    private static let minuteKey = "QuotaDot.dailyReminder.minute"
-    private static let messageKey = "QuotaDot.dailyReminder.message"
+    private static let remindersKey = "QuotaPulse.dailyReminders.v1"
+    private static let enabledKey = "QuotaPulse.dailyReminder.enabled"
+    private static let hourKey = "QuotaPulse.dailyReminder.hour"
+    private static let minuteKey = "QuotaPulse.dailyReminder.minute"
+    private static let messageKey = "QuotaPulse.dailyReminder.message"
 
     static func loadAll(from defaults: UserDefaults = .standard) -> [DailyReminderConfiguration] {
         if let data = defaults.data(forKey: remindersKey),

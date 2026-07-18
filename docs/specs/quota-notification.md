@@ -36,6 +36,8 @@
 - R8：额度向上重置时 MUST NOT 发送阈值通知。
 - R9：有效配置 MUST 持久化；缺失、损坏或非法的持久化数据 MUST 回退到默认配置。
 - R10：设置界面 MUST 同时提供英文和简体中文文案。
+- R11：百分比输入行 MUST 使用左侧字段名、右侧紧凑数字输入框和 `%` 单位，且不得在输入区域重复渲染字段名。
+- R12：固定间隔和分两段模式的输入行 SHOULD 与“提醒与自动化”编辑器保持一致的水平对齐、常规行高和分隔节奏。
 
 ## 合法性与边界
 
@@ -51,6 +53,7 @@
 - A4：Given 上述两段配置，When 剩余额度一次从 52% 降至 44%，Then 只通知 45% 阈值。
 - A5：Given 任一输入为 0、100、负数或大于 100，When 保存，Then 显示非法输入且不持久化。
 - A6：Given 剩余额度向上恢复，When 刷新，Then 不通知。
+- A7：Given 固定间隔或分两段模式，When 设置页以 620 点宽度显示，Then 字段名保持水平可读，右侧仅显示数字输入和 `%`，不存在逐字换行的重复标签。
 
 ## 技术方案
 
@@ -64,15 +67,16 @@
 - 额度向上重置不提醒。
 - 完整执行 `swift test` 和 `./script/security_check.sh`。
 - 手动检查设置页两种模式、双语切换、非法输入提示以及重启后配置恢复。
+- 手动检查固定间隔和分两段模式的输入行在中英文下均无重复标签、竖排文字或异常增高。
 
 ## 实现映射
 
 | 规格 | 实现/测试 |
 | --- | --- |
-| R1–R6、R9 | `Sources/QuotaDot/Models/QuotaNotificationConfiguration.swift` |
-| R7–R8 | `Sources/QuotaDot/Services/QuotaNotificationService.swift`、`Sources/QuotaDot/Stores/QuotaStore.swift` |
-| R10 | `Sources/QuotaDot/Views/SettingsView.swift`、`Sources/QuotaDot/Resources/*.lproj/Localizable.strings` |
-| A1–A6 | `Tests/QuotaDotTests/QuotaModelsTests.swift` |
+| R1–R6、R9 | `Sources/QuotaPulse/Models/QuotaNotificationConfiguration.swift` |
+| R7–R8 | `Sources/QuotaPulse/Services/QuotaNotificationService.swift`、`Sources/QuotaPulse/Stores/QuotaStore.swift` |
+| R10–R12 | `Sources/QuotaPulse/Views/SettingsView.swift`、`Sources/QuotaPulse/Resources/*.lproj/Localizable.strings` |
+| A1–A6 | `Tests/QuotaPulseTests/QuotaModelsTests.swift` |
 
 ## 未决问题
 

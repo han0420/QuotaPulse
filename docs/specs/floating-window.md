@@ -34,13 +34,13 @@
 
 ## 技术方案
 
-`FloatingWindowController` 管理无边框 `NSPanel`、锚点、hover 监控和紧凑/展开尺寸；`FloatingQuotaView` 选择布局；`ProviderCard` 与 `QuotaRing` 展示 provider 细节；`MenuBarQuotaGlyph` 和 `QuotaDotApp` 构成菜单栏入口。
+`FloatingWindowController` 管理无边框 `NSPanel`、锚点、hover 监控和紧凑/展开尺寸；`FloatingQuotaView` 选择布局；`ProviderCard` 与 `QuotaRing` 展示 provider 细节；`MenuBarQuotaGlyph` 和 `QuotaPulseApp` 构成菜单栏入口。
 
 ## 测试计划与实现映射
 
 - 健康边界由 `QuotaModelsTests.testHealthThresholds` 覆盖。
-- UI：`Sources/QuotaDot/Views/`。
-- 窗口行为：`Sources/QuotaDot/Support/FloatingWindowController.swift`。
+- UI：`Sources/QuotaPulse/Views/`。
+- 窗口行为：`Sources/QuotaPulse/Support/FloatingWindowController.swift`。
 - 手动检查 hover、拖动、全屏 Space、单/双 provider、不同健康等级和菜单栏刷新。
 
 ## 未决问题

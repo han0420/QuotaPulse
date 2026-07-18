@@ -1,4 +1,4 @@
-# Install QuotaDot
+# Install QuotaPulse
 
 ## System Requirements
 
@@ -9,27 +9,27 @@
 
 Only install a release DMG that is signed with Developer ID and notarized by Apple.
 
-1. Download the latest `QuotaDot-x.y.z.dmg` from [GitHub Releases](https://github.com/MeowkingCP/QuotaDot/releases).
+1. Download the latest `QuotaPulse-x.y.z.dmg` from [GitHub Releases](https://github.com/MeowkingCP/QuotaPulse/releases).
 2. Double-click the DMG to open it.
-3. Drag QuotaDot into the Applications folder.
-4. Launch QuotaDot from Applications.
+3. Drag QuotaPulse into the Applications folder.
+4. Launch QuotaPulse from Applications.
 
-QuotaDot is a menu bar application and does not appear in the Dock. After launch, the menu bar shows a dual-ring icon and the lowest remaining quota percentage. A floating window appears on the desktop and collapses automatically when it is not being inspected.
+QuotaPulse is a menu bar application and does not appear in the Dock. After launch, the menu bar shows a dual-ring icon and the lowest remaining quota percentage. A floating window appears on the desktop and collapses automatically when it is not being inspected.
 
 If no signed and notarized DMG is listed on the Releases page, a public end-user build is not available yet. Developers can build from source by following the instructions in the repository README.
 
 ## First Launch
 
 - **Weather background:** Allow location access when macOS asks for permission. Quota features continue to work if permission is denied.
-- **Launch at login:** Open the QuotaDot menu bar menu, choose Settings, and enable Launch at Login. If macOS requests approval, follow the prompt to System Settings → General → Login Items.
+- **Launch at login:** Open the QuotaPulse menu bar menu, choose Settings, and enable Launch at Login. If macOS requests approval, follow the prompt to System Settings → General → Login Items.
 - **Language:** Click `EN` or `ZH` in the expanded status row, or select a display language in Settings. No restart is required.
 - **No quota data:** Confirm that Codex or Claude Code is signed in for the current macOS user, then choose Refresh Now.
 
 ## Uninstall
 
-1. Disable Launch at Login in QuotaDot Settings.
-2. Choose Quit QuotaDot from the menu bar menu.
-3. Move QuotaDot from Applications to the Trash.
+1. Disable Launch at Login in QuotaPulse Settings.
+2. Choose Quit QuotaPulse from the menu bar menu.
+3. Move QuotaPulse from Applications to the Trash.
 
 ## Unsigned Development Builds
 

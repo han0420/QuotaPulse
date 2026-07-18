@@ -1,10 +1,10 @@
 <p align="center">
-  <img src="Sources/QuotaDot/Resources/AppIcon.png" width="128" alt="QuotaDot icon">
+  <img src="Sources/QuotaPulse/Resources/AppIcon.png" width="128" alt="QuotaPulse icon">
 </p>
 
-<h1 align="center">QuotaDot</h1>
+<h1 align="center">QuotaPulse</h1>
 
-<p align="center">A quiet, native quota companion for Codex and Claude on macOS.</p>
+<p align="center">A private, native quota, activity, and alert companion for Codex and Claude on macOS.</p>
 
 <p align="center">
   <img alt="macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-111827">
@@ -12,7 +12,7 @@
   <img alt="MIT License" src="https://img.shields.io/badge/License-MIT-2563EB">
 </p>
 
-QuotaDot is a native macOS menu bar and floating quota companion for Codex and Claude. It reads locally authenticated sessions and presents remaining quota, reset times, and current activity in a restrained Liquid Glass interface.
+QuotaPulse is a native macOS menu bar and floating companion for Codex and Claude. It privately presents remaining quota, reset times, local activity, and configurable alerts in a restrained Liquid Glass interface.
 
 ## Features
 
@@ -32,16 +32,16 @@ QuotaDot is a native macOS menu bar and floating quota companion for Codex and C
 
 Public builds must be signed with a Developer ID Application certificate and notarized by Apple. When a signed release is available:
 
-1. Download the latest `QuotaDot-x.y.z.dmg` from [GitHub Releases](https://github.com/MeowkingCP/QuotaDot/releases).
-2. Open the DMG and drag QuotaDot into Applications.
-3. Launch QuotaDot and allow location access if you want the live weather background.
+1. Download the latest `QuotaPulse-x.y.z.dmg` from [GitHub Releases](https://github.com/MeowkingCP/QuotaPulse/releases).
+2. Open the DMG and drag QuotaPulse into Applications.
+3. Launch QuotaPulse and allow location access if you want the live weather background.
 4. Make sure Codex and/or Claude Code is already signed in for the current macOS user.
 
 No unsigned build is published as an end-user release. Files containing `UNSIGNED` in their name are local development artifacts and must not be redistributed. See the [installation guide](docs/INSTALL.md) for details.
 
 ## Privacy
 
-QuotaDot does not operate an account or quota relay server:
+QuotaPulse does not operate an account or quota relay server:
 
 - Codex credentials are loaded read-only from the local `CODEX_HOME/auth.json` file, which defaults to `~/.codex/auth.json`.
 - Claude credentials are read from Claude Code's local secure storage and are written back only when the official token refresh flow requires it.
@@ -55,8 +55,8 @@ See [PRIVACY.md](PRIVACY.md). By using this project, you acknowledge that it dep
 Requirements: macOS 14 or later, Xcode Command Line Tools, and Swift 6.
 
 ```bash
-git clone https://github.com/MeowkingCP/QuotaDot.git
-cd QuotaDot
+git clone https://github.com/MeowkingCP/QuotaPulse.git
+cd QuotaPulse
 swift test
 ./script/build_and_run.sh --verify
 ```
@@ -73,7 +73,7 @@ Development follows the repository's [spec-first workflow](docs/SPEC_WORKFLOW.md
 ## Project Structure
 
 ```text
-Sources/QuotaDot/
+Sources/QuotaPulse/
   App/        Application lifecycle and menu bar entry point
   Models/     Quota and weather data models
   Services/   Codex, Claude, location, weather, and login-item clients
@@ -88,8 +88,8 @@ docs/         Architecture, feature specs, installation, and release guides
 
 Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md) before submitting a change.
 
-QuotaDot is not affiliated with or endorsed by OpenAI or Anthropic. All related names and trademarks belong to their respective owners.
+QuotaPulse is not affiliated with or endorsed by OpenAI or Anthropic. All related names and trademarks belong to their respective owners.
 
 ## License
 
-[MIT](LICENSE) © 2026 QuotaDot Contributors
+[MIT](LICENSE) © 2026 QuotaPulse Contributors

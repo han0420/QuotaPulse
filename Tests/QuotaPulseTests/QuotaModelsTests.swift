@@ -1,9 +1,20 @@
 import Foundation
 import CoreLocation
 import XCTest
-@testable import QuotaDot
+@testable import QuotaPulse
 
 final class QuotaModelsTests: XCTestCase {
+    func testBrandIdentityUsesQuotaPulsePositioning() {
+        XCTAssertEqual(AppBrand.name, "QuotaPulse")
+        XCTAssertEqual(AppBrand.bundleIdentifier, "com.cmsjcm.QuotaPulse")
+        XCTAssertEqual(AppBrand.preferenceNamespace, "QuotaPulse")
+        XCTAssertEqual(
+            AppBrand.englishSubtitle,
+            "A private, native quota, activity, and alert companion for Codex and Claude on macOS."
+        )
+        XCTAssertEqual(AppBrand.chineseSubtitle, "Codex 与 Claude 的本地额度、活动状态与提醒伴侣")
+    }
+
     func testDecodesUsageAndComputesRemaining() throws {
         let json = #"[{"providerId":"codex","displayName":"Codex","plan":"Pro","lines":[{"type":"progress","label":"Session","used":17,"limit":100,"resetsAt":"2026-07-12T18:17:13.000Z","periodDurationMs":18000000}],"fetchedAt":"2026-07-12T15:44:43.909678Z"}]"#.data(using: .utf8)!
         let decoder = JSONDecoder()
@@ -91,7 +102,7 @@ final class QuotaModelsTests: XCTestCase {
     }
 
     func testQuotaNotificationPreferencesDefaultsToTenPercentAndPersistsChanges() {
-        let suiteName = "QuotaDotTests.quota-notification"
+        let suiteName = "QuotaPulseTests.quota-notification"
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
         defer { defaults.removePersistentDomain(forName: suiteName) }
@@ -140,7 +151,7 @@ final class QuotaModelsTests: XCTestCase {
     }
 
     func testDailyReminderPreferencesStoreMultipleReminders() {
-        let suiteName = "QuotaDotTests.multiple-reminders"
+        let suiteName = "QuotaPulseTests.multiple-reminders"
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
         defer { defaults.removePersistentDomain(forName: suiteName) }
@@ -168,14 +179,14 @@ final class QuotaModelsTests: XCTestCase {
     }
 
     func testDailyReminderPreferencesMigratesLegacyReminder() {
-        let suiteName = "QuotaDotTests.legacy-reminder"
+        let suiteName = "QuotaPulseTests.legacy-reminder"
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
         defer { defaults.removePersistentDomain(forName: suiteName) }
-        defaults.set(true, forKey: "QuotaDot.dailyReminder.enabled")
-        defaults.set(8, forKey: "QuotaDot.dailyReminder.hour")
-        defaults.set(45, forKey: "QuotaDot.dailyReminder.minute")
-        defaults.set("旧提醒", forKey: "QuotaDot.dailyReminder.message")
+        defaults.set(true, forKey: "QuotaPulse.dailyReminder.enabled")
+        defaults.set(8, forKey: "QuotaPulse.dailyReminder.hour")
+        defaults.set(45, forKey: "QuotaPulse.dailyReminder.minute")
+        defaults.set("旧提醒", forKey: "QuotaPulse.dailyReminder.message")
 
         let migrated = DailyReminderPreferences.loadAll(from: defaults)
 
@@ -317,8 +328,8 @@ final class QuotaModelsTests: XCTestCase {
     }
 
     func testReminderSnoozeActionsMapToExpectedDelays() {
-        XCTAssertEqual(ReminderSnoozePolicy.delay(for: "QuotaDot.snooze.10m"), 10 * 60)
-        XCTAssertEqual(ReminderSnoozePolicy.delay(for: "QuotaDot.snooze.1h"), 60 * 60)
+        XCTAssertEqual(ReminderSnoozePolicy.delay(for: "QuotaPulse.snooze.10m"), 10 * 60)
+        XCTAssertEqual(ReminderSnoozePolicy.delay(for: "QuotaPulse.snooze.1h"), 60 * 60)
         XCTAssertNil(ReminderSnoozePolicy.delay(for: "unknown"))
     }
 

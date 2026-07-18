@@ -32,7 +32,7 @@ final class QuotaStore {
     private let claudeDirectClient = ClaudeDirectClient()
     private let notificationService: QuotaNotificationService
     private let language: LanguageSettings
-    private let logger = Logger(subsystem: "com.cmsjcm.QuotaDot", category: "quota")
+    private let logger = Logger(subsystem: "com.cmsjcm.QuotaPulse", category: "quota")
     private var activityTask: Task<Void, Never>?
     private var weatherTask: Task<Void, Never>?
     private var openUsageTask: Task<Void, Never>?

@@ -185,15 +185,20 @@ struct SettingsView: View {
     }
 
     private func percentField(_ title: String, value: Binding<Int>) -> some View {
-        LabeledContent(title) {
-            HStack(spacing: 4) {
-                TextField(title, value: value, format: .number)
-                    .frame(width: 64)
-                    .multilineTextAlignment(.trailing)
-                Text("%")
-                    .foregroundStyle(.secondary)
-            }
+        HStack(spacing: 12) {
+            Text(title)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            TextField("", value: value, format: .number)
+                .labelsHidden()
+                .accessibilityLabel(title)
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 72)
+                .multilineTextAlignment(.trailing)
+            Text("%")
+                .foregroundStyle(.secondary)
+                .frame(width: 14, alignment: .leading)
         }
+        .frame(minHeight: 28)
     }
 
     private func saveQuotaNotificationConfiguration() {

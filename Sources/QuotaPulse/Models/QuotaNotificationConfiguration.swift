@@ -69,7 +69,7 @@ struct QuotaNotificationConfiguration: Codable, Equatable {
 }
 
 enum QuotaNotificationPreferences {
-    private static let storageKey = "QuotaDot.quotaNotification.configuration"
+    private static let storageKey = "QuotaPulse.quotaNotification.configuration"
     static let defaultConfiguration = QuotaNotificationConfiguration.singleStage(intervalPercent: 10)
 
     static func load(from defaults: UserDefaults = .standard) -> QuotaNotificationConfiguration {

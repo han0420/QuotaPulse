@@ -1,8 +1,8 @@
-# QuotaDot 架构概览
+# QuotaPulse 架构概览
 
 ## 产品边界
 
-QuotaDot 是 macOS 14+ 原生菜单栏应用，以 Swift 6 和 SwiftUI 构建。它读取本机已有的 Codex/Claude 登录状态，直接请求对应服务的额度信息，并在菜单栏、悬浮窗和系统通知中呈现。项目不包含中转服务器、账号系统、分析服务或远程配置。
+QuotaPulse 是 macOS 14+ 原生菜单栏应用，以 Swift 6 和 SwiftUI 构建。它读取本机已有的 Codex/Claude 登录状态，直接请求对应服务的额度信息，并在菜单栏、悬浮窗和系统通知中呈现。项目不包含中转服务器、账号系统、分析服务或远程配置。
 
 ## 运行时数据流
 
@@ -26,19 +26,19 @@ Services 中的额度客户端 ──────┐
 
 | 路径 | 职责 |
 | --- | --- |
-| `Sources/QuotaDot/App` | 应用生命周期、菜单栏入口、依赖装配 |
-| `Sources/QuotaDot/Models` | 可持久化配置、额度和天气领域模型 |
-| `Sources/QuotaDot/Services` | 网络、本机凭据、通知、位置、登录项和动作执行 |
-| `Sources/QuotaDot/Stores` | 刷新编排、数据合并、状态与提醒触发 |
-| `Sources/QuotaDot/Views` | SwiftUI 菜单栏、悬浮窗、设置界面 |
-| `Sources/QuotaDot/Support` | 格式化、主题、语言和窗口控制 |
-| `Sources/QuotaDot/Resources` | 本地化字符串和图片资源 |
-| `Tests/QuotaDotTests` | 模型、策略、解析与关键行为测试 |
+| `Sources/QuotaPulse/App` | 应用生命周期、菜单栏入口、依赖装配 |
+| `Sources/QuotaPulse/Models` | 可持久化配置、额度和天气领域模型 |
+| `Sources/QuotaPulse/Services` | 网络、本机凭据、通知、位置、登录项和动作执行 |
+| `Sources/QuotaPulse/Stores` | 刷新编排、数据合并、状态与提醒触发 |
+| `Sources/QuotaPulse/Views` | SwiftUI 菜单栏、悬浮窗、设置界面 |
+| `Sources/QuotaPulse/Support` | 格式化、主题、语言和窗口控制 |
+| `Sources/QuotaPulse/Resources` | 本地化字符串和图片资源 |
+| `Tests/QuotaPulseTests` | 模型、策略、解析与关键行为测试 |
 | `script` | 构建、运行、安全检查、图标与发布脚本 |
 
 ## 关键组件
 
-- `QuotaDotApp` / `AppDelegate`：创建共享服务、store 和窗口控制器，启动刷新循环并恢复定时提醒。
+- `QuotaPulseApp` / `AppDelegate`：创建共享服务、store 和窗口控制器，启动刷新循环并恢复定时提醒。
 - `QuotaStore`：每 60 秒发起刷新；优先采用 direct client 的成功结果；按 provider/周期跟踪额度变化。
 - `CodexDirectClient`、`ClaudeDirectClient`、`OpenUsageClient`：额度来源适配器。新增来源时应保持凭据只读和服务直连原则。
 - `QuotaNotificationConfiguration`：额度阈值提醒的配置、合法性、阈值生成与 `UserDefaults` 持久化。

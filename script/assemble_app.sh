@@ -2,10 +2,10 @@
 set -euo pipefail
 
 CONFIGURATION="${1:-debug}"
-APP_NAME="QuotaDot"
-BUNDLE_ID="com.cmsjcm.QuotaDot"
-VERSION="${QUOTADOT_VERSION:-0.1.0}"
-BUILD_NUMBER="${QUOTADOT_BUILD_NUMBER:-1}"
+APP_NAME="QuotaPulse"
+BUNDLE_ID="com.cmsjcm.QuotaPulse"
+VERSION="${QUOTAPULSE_VERSION:-0.1.0}"
+BUILD_NUMBER="${QUOTAPULSE_BUILD_NUMBER:-1}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_BUNDLE="${2:-$ROOT_DIR/dist/$APP_NAME.app}"
 APP_MACOS="$APP_BUNDLE/Contents/MacOS"
@@ -29,8 +29,8 @@ else
   BIN_PATH="$(swift build --show-bin-path)"
 fi
 BUILD_BINARY="$BIN_PATH/$APP_NAME"
-RESOURCE_BUNDLE="$(find "$BIN_PATH" -maxdepth 1 -type d -name 'QuotaDot_QuotaDot.bundle' -print -quit)"
-ICON_SOURCE="$ROOT_DIR/Sources/QuotaDot/Resources/AppIcon.icns"
+RESOURCE_BUNDLE="$(find "$BIN_PATH" -maxdepth 1 -type d -name 'QuotaPulse_QuotaPulse.bundle' -print -quit)"
+ICON_SOURCE="$ROOT_DIR/Sources/QuotaPulse/Resources/AppIcon.icns"
 
 [[ -x "$BUILD_BINARY" ]] || { echo "missing executable: $BUILD_BINARY" >&2; exit 3; }
 [[ -f "$ICON_SOURCE" ]] || { echo "missing app icon: $ICON_SOURCE" >&2; exit 3; }
@@ -66,7 +66,7 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<PLIST
 </dict></plist>
 PLIST
 
-SIGNING_IDENTITY="${QUOTADOT_SIGNING_IDENTITY:-}"
+SIGNING_IDENTITY="${QUOTAPULSE_SIGNING_IDENTITY:-}"
 if [[ -z "$SIGNING_IDENTITY" ]]; then
   if [[ "$CONFIGURATION" == "release" ]]; then
     SIGNING_IDENTITY="$(security find-identity -v -p codesigning 2>/dev/null \
@@ -80,15 +80,15 @@ if [[ -z "$SIGNING_IDENTITY" ]]; then
 fi
 
 if [[ -z "$SIGNING_IDENTITY" ]]; then
-  if [[ "${QUOTADOT_ALLOW_ADHOC:-0}" == "1" ]]; then
+  if [[ "${QUOTAPULSE_ALLOW_ADHOC:-0}" == "1" ]]; then
     SIGNING_IDENTITY="-"
     echo "warning: assembling an ad-hoc signed build; it is not suitable for public distribution" >&2
   else
     echo "No suitable signing identity found." >&2
     if [[ "$CONFIGURATION" == "release" ]]; then
-      echo "Install a Developer ID Application certificate, or set QUOTADOT_ALLOW_ADHOC=1 for local packaging QA only." >&2
+      echo "Install a Developer ID Application certificate, or set QUOTAPULSE_ALLOW_ADHOC=1 for local packaging QA only." >&2
     else
-      echo "Install an Apple Development certificate, or set QUOTADOT_ALLOW_ADHOC=1." >&2
+      echo "Install an Apple Development certificate, or set QUOTAPULSE_ALLOW_ADHOC=1." >&2
     fi
     exit 4
   fi

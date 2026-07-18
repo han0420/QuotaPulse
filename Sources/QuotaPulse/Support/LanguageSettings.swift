@@ -16,7 +16,7 @@ enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
 
 @MainActor @Observable
 final class LanguageSettings {
-    static let storageKey = "QuotaDot.appLanguage"
+    static let storageKey = "QuotaPulse.appLanguage"
 
     var language: AppLanguage {
         didSet { UserDefaults.standard.set(language.rawValue, forKey: Self.storageKey) }
@@ -51,7 +51,7 @@ final class LanguageSettings {
 enum QuotaResourceBundle {
     static var current: Bundle {
         let packagedBundle = Bundle.main.resourceURL
-            .map { $0.appendingPathComponent("QuotaDot_QuotaDot.bundle", isDirectory: true) }
+            .map { $0.appendingPathComponent("QuotaPulse_QuotaPulse.bundle", isDirectory: true) }
             .flatMap(Bundle.init(url:))
         return packagedBundle ?? Bundle.module
     }

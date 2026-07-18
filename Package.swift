@@ -2,16 +2,16 @@
 import PackageDescription
 
 let package = Package(
-    name: "QuotaDot",
+    name: "QuotaPulse",
     defaultLocalization: "en",
     platforms: [.macOS(.v14)],
-    products: [.executable(name: "QuotaDot", targets: ["QuotaDot"])],
+    products: [.executable(name: "QuotaPulse", targets: ["QuotaPulse"])],
     targets: [
         .executableTarget(
-            name: "QuotaDot",
-            path: "Sources/QuotaDot",
+            name: "QuotaPulse",
+            path: "Sources/QuotaPulse",
             resources: [.process("Resources")]
         ),
-        .testTarget(name: "QuotaDotTests", dependencies: ["QuotaDot"], path: "Tests/QuotaDotTests")
+        .testTarget(name: "QuotaPulseTests", dependencies: ["QuotaPulse"], path: "Tests/QuotaPulseTests")
     ]
 )

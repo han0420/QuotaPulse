@@ -1,10 +1,10 @@
-# AGENTS.md — QuotaDot repository guide
+# AGENTS.md — QuotaPulse repository guide
 
 This file is the entry point for AI coding agents. It applies to the entire repository. User instructions take precedence; more deeply nested `AGENTS.md` files, if added later, override this file only within their directory.
 
 ## Mission and boundaries
 
-QuotaDot is a native macOS 14+ Swift 6 / SwiftUI menu bar app that displays Codex and Claude quota, activity, reset information, weather-backed visuals, and notifications. It reads local authenticated sessions and calls provider endpoints directly. Do not introduce an account relay, analytics, telemetry, remote configuration, or a new backend without an explicit privacy/security decision.
+QuotaPulse is a native macOS 14+ Swift 6 / SwiftUI menu bar app that displays Codex and Claude quota, activity, reset information, weather-backed visuals, and notifications. It reads local authenticated sessions and calls provider endpoints directly. Do not introduce an account relay, analytics, telemetry, remote configuration, or a new backend without an explicit privacy/security decision.
 
 Never expose or commit tokens, credential files, Keychain contents, usernames, exact coordinates, private keys, signing material, or personal absolute paths. Preserve the direct-service and local-first privacy model.
 
@@ -35,7 +35,7 @@ Do not silently diverge from an accepted spec. Bug fixes should update an existi
 ## Repository map
 
 ```text
-Sources/QuotaDot/
+Sources/QuotaPulse/
   App/        App lifecycle, menu bar scene, dependency composition
   Models/     Domain models and persisted configuration
   Services/   Provider, notification, weather, location, login-item clients
@@ -43,14 +43,14 @@ Sources/QuotaDot/
   Views/      SwiftUI menu bar, floating panel, settings, visual components
   Support/    Formatting, theme, localization state, window control
   Resources/  en and zh-Hans localization plus image assets
-Tests/QuotaDotTests/  XCTest behavior, policy, parsing, and regression coverage
+Tests/QuotaPulseTests/  XCTest behavior, policy, parsing, and regression coverage
 docs/                 Architecture, specs, install, and release documentation
 script/               Build/run, security, assets, packaging, and release tools
 ```
 
 Key ownership:
 
-- `QuotaDotApp.swift`: lifecycle and shared dependency construction.
+- `QuotaPulseApp.swift` (`QuotaPulseApp`): lifecycle and shared dependency construction.
 - `QuotaStore.swift`: source refresh, provider merge, quota state, activity, threshold dispatch.
 - `QuotaModels.swift`: provider/window models and quota health.
 - `QuotaNotificationConfiguration.swift`: configurable quota-alert policy and persistence.

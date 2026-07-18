@@ -47,10 +47,10 @@
 
 ## 测试计划与实现映射
 
-- 模型/窗口测试：`Tests/QuotaDotTests/QuotaModelsTests.swift`。
-- 编排：`Sources/QuotaDot/Stores/QuotaStore.swift`。
-- 模型：`Sources/QuotaDot/Models/QuotaModels.swift`。
-- 来源：`Sources/QuotaDot/Services/CodexDirectClient.swift`、`ClaudeDirectClient.swift`、`OpenUsageClient.swift`。
+- 模型/窗口测试：`Tests/QuotaPulseTests/QuotaModelsTests.swift`。
+- 编排：`Sources/QuotaPulse/Stores/QuotaStore.swift`。
+- 模型：`Sources/QuotaPulse/Models/QuotaModels.swift`。
+- 来源：`Sources/QuotaPulse/Services/CodexDirectClient.swift`、`ClaudeDirectClient.swift`、`OpenUsageClient.swift`。
 - 手动检查：Codex-only、Claude-only、双 provider、未登录和服务暂时失败。
 
 ## 未决问题

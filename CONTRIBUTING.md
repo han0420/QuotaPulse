@@ -1,6 +1,6 @@
-# Contributing to QuotaDot
+# Contributing to QuotaPulse
 
-Thanks for helping improve QuotaDot.
+Thanks for helping improve QuotaPulse.
 
 ## Before opening a change
 
