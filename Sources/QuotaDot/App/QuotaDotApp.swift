@@ -21,14 +21,20 @@ struct QuotaDotApp: App {
             }
         }
 
-        Settings { SettingsView(language: appDelegate.language) }
+        Settings {
+            SettingsView(
+                language: appDelegate.language,
+                notificationService: appDelegate.notificationService
+            )
+        }
     }
 }
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    let store = QuotaStore()
     let language = LanguageSettings()
+    let notificationService = QuotaNotificationService()
+    lazy var store = QuotaStore(notificationService: notificationService, language: language)
     lazy var windowController = FloatingWindowController(store: store, language: language)
     private var refreshTask: Task<Void, Never>?
 
@@ -36,10 +42,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
         windowController.show()
         refreshTask = Task { await store.start() }
+        Task {
+            await notificationService.requestAuthorization()
+            await restoreDailyReminders()
+        }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         refreshTask?.cancel()
+    }
+
+    private func restoreDailyReminders() async {
+        let configurations = DailyReminderPreferences.loadAll()
+        guard !configurations.isEmpty else { return }
+        _ = await notificationService.synchronizeReminders(
+            configurations,
+            title: language.text("notification.daily.title"),
+            snoozeTenMinutesTitle: language.text("notification.snooze.10m"),
+            snoozeOneHourTitle: language.text("notification.snooze.1h")
+        )
     }
 }
 

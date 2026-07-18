@@ -4,6 +4,18 @@ import OSLog
 
 @MainActor @Observable
 final class QuotaStore {
+    private struct QuotaReadingKey: Hashable {
+        let providerId: String
+        let period: String
+    }
+
+    private struct QuotaReading {
+        let key: QuotaReadingKey
+        let providerName: String
+        let periodKey: String
+        let remaining: Double
+    }
+
     private(set) var providers: [ProviderUsage] = []
     private(set) var lastUpdated: Date?
     private(set) var errorMessageKey: String?
@@ -18,6 +30,8 @@ final class QuotaStore {
     private let locationClient = LocationClient()
     private let codexDirectClient = CodexDirectClient()
     private let claudeDirectClient = ClaudeDirectClient()
+    private let notificationService: QuotaNotificationService
+    private let language: LanguageSettings
     private let logger = Logger(subsystem: "com.cmsjcm.QuotaDot", category: "quota")
     private var activityTask: Task<Void, Never>?
     private var weatherTask: Task<Void, Never>?
@@ -26,6 +40,12 @@ final class QuotaStore {
     private var claudeTask: Task<Void, Never>?
     private var directCodexAvailable = false
     private var directClaudeAvailable = false
+    private var previousQuotaRemaining: [QuotaReadingKey: Double]?
+
+    init(notificationService: QuotaNotificationService, language: LanguageSettings) {
+        self.notificationService = notificationService
+        self.language = language
+    }
 
     var isConsuming: Bool { !activeProviderIds.isEmpty }
     func isConsuming(_ provider: ProviderUsage) -> Bool {
@@ -185,9 +205,59 @@ final class QuotaStore {
             if $1.providerId.lowercased() == "codex" { return false }
             return $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
         }
+        notifyForCrossedQuotaThresholds(in: sorted)
         providers = sorted
         lastUpdated = .now
         errorMessageKey = nil
+    }
+
+    private func notifyForCrossedQuotaThresholds(in providers: [ProviderUsage]) {
+        let readings = quotaReadings(in: providers)
+        defer { previousQuotaRemaining = Dictionary(uniqueKeysWithValues: readings.map { ($0.key, $0.remaining) }) }
+        guard let previousQuotaRemaining else { return }
+
+        for reading in readings {
+            guard let previous = previousQuotaRemaining[reading.key],
+                let threshold = QuotaNotificationPolicy.crossedThreshold(
+                    previous: previous,
+                    current: reading.remaining,
+                    configuration: QuotaNotificationPreferences.load()
+                  ) else { continue }
+
+            let thresholdPercent = Int((threshold * 100).rounded())
+            let currentPercent = Int((reading.remaining * 100).rounded())
+            let title = language.text("notification.quota.title", thresholdPercent)
+            let body = language.text(
+                "notification.quota.body",
+                reading.providerName,
+                language.text(reading.periodKey),
+                currentPercent
+            )
+            Task { await notificationService.send(title: title, body: body) }
+        }
+    }
+
+    private func quotaReadings(in providers: [ProviderUsage]) -> [QuotaReading] {
+        providers.flatMap { provider in
+            var result: [QuotaReading] = []
+            if let remaining = provider.session?.remainingPercent {
+                result.append(QuotaReading(
+                    key: QuotaReadingKey(providerId: provider.providerId.lowercased(), period: "session"),
+                    providerName: provider.displayName,
+                    periodKey: "quota.session",
+                    remaining: remaining
+                ))
+            }
+            if let remaining = provider.weekly?.remainingPercent {
+                result.append(QuotaReading(
+                    key: QuotaReadingKey(providerId: provider.providerId.lowercased(), period: "weekly"),
+                    providerName: provider.displayName,
+                    periodKey: "quota.weekly",
+                    remaining: remaining
+                ))
+            }
+            return result
+        }
     }
 
     private func setFailureMessageIfNeeded() {

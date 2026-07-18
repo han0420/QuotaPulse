@@ -26,6 +26,7 @@ QuotaDot is a native macOS menu bar and floating quota companion for Codex and C
 - Keeps a compact dual-ring indicator and the lowest remaining percentage in the menu bar.
 - Supports instant Simplified Chinese and English switching in the floating panel and Settings, with the preference saved locally.
 - Supports launching automatically after macOS login.
+- Supports configurable quota alerts with either one fixed interval or two consumption stages.
 
 ## Installation
 
@@ -67,6 +68,7 @@ Regenerate the application icon:
 ```
 
 Maintainers can find the signing, notarization, and DMG workflow in the [release guide](docs/RELEASING.md).
+Development follows the repository's [spec-first workflow](docs/SPEC_WORKFLOW.md); see the [documentation map](docs/README.md) and [architecture overview](docs/ARCHITECTURE.md) before changing behavior.
 
 ## Project Structure
 
@@ -79,6 +81,7 @@ Sources/QuotaDot/
   Views/      Liquid Glass floating interface and Settings
 script/       Build, icon generation, signing, and release scripts
 Tests/        Data parsing and policy tests
+docs/         Architecture, feature specs, installation, and release guides
 ```
 
 ## Contributing

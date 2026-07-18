@@ -21,6 +21,342 @@ final class QuotaModelsTests: XCTestCase {
         XCTAssertEqual(QuotaHealth(remaining: 0.10), .critical)
     }
 
+    func testQuotaNotificationDetectsCrossedTenPercentBoundary() {
+        XCTAssertEqual(
+            QuotaNotificationPolicy.crossedThreshold(previous: 0.91, current: 0.89),
+            0.90
+        )
+        XCTAssertNil(
+            QuotaNotificationPolicy.crossedThreshold(previous: 0.89, current: 0.88)
+        )
+    }
+
+    func testQuotaNotificationUsesLowestBoundaryWhenOneRefreshCrossesSeveral() {
+        XCTAssertEqual(
+            QuotaNotificationPolicy.crossedThreshold(previous: 0.91, current: 0.69),
+            0.70
+        )
+    }
+
+    func testQuotaNotificationDoesNotFireWhenQuotaResetsUpward() {
+        XCTAssertNil(
+            QuotaNotificationPolicy.crossedThreshold(previous: 0.09, current: 1.0)
+        )
+    }
+
+    func testQuotaNotificationSupportsCustomSingleStageInterval() throws {
+        let configuration = QuotaNotificationConfiguration.singleStage(intervalPercent: 7)
+
+        XCTAssertTrue(configuration.isValid)
+        XCTAssertEqual(
+            try XCTUnwrap(QuotaNotificationPolicy.crossedThreshold(
+                previous: 0.94,
+                current: 0.92,
+                configuration: configuration
+            )),
+            0.93,
+            accuracy: 0.000_001
+        )
+    }
+
+    func testQuotaNotificationSupportsTwoStageIntervals() throws {
+        let configuration = QuotaNotificationConfiguration.twoStage(
+            breakpointPercent: 50,
+            firstIntervalPercent: 10,
+            secondIntervalPercent: 5
+        )
+
+        XCTAssertTrue(configuration.isValid)
+        XCTAssertEqual(configuration.remainingThresholdPercents, [90, 80, 70, 60, 50, 45, 40, 35, 30, 25, 20, 15, 10, 5])
+        XCTAssertEqual(
+            try XCTUnwrap(QuotaNotificationPolicy.crossedThreshold(
+                previous: 0.52,
+                current: 0.44,
+                configuration: configuration
+            )),
+            0.45,
+            accuracy: 0.000_001
+        )
+    }
+
+    func testQuotaNotificationConfigurationRejectsUnreasonableNumbers() {
+        XCTAssertFalse(QuotaNotificationConfiguration.singleStage(intervalPercent: 0).isValid)
+        XCTAssertFalse(QuotaNotificationConfiguration.singleStage(intervalPercent: 100).isValid)
+        XCTAssertFalse(QuotaNotificationConfiguration.singleStage(intervalPercent: 101).isValid)
+        XCTAssertFalse(QuotaNotificationConfiguration.twoStage(
+            breakpointPercent: 100,
+            firstIntervalPercent: 10,
+            secondIntervalPercent: 5
+        ).isValid)
+    }
+
+    func testQuotaNotificationPreferencesDefaultsToTenPercentAndPersistsChanges() {
+        let suiteName = "QuotaDotTests.quota-notification"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        XCTAssertEqual(QuotaNotificationPreferences.load(from: defaults), .singleStage(intervalPercent: 10))
+
+        let configuration = QuotaNotificationConfiguration.twoStage(
+            breakpointPercent: 40,
+            firstIntervalPercent: 8,
+            secondIntervalPercent: 4
+        )
+        QuotaNotificationPreferences.save(configuration, to: defaults)
+
+        XCTAssertEqual(QuotaNotificationPreferences.load(from: defaults), configuration)
+    }
+
+    func testDailyReminderBuildsRepeatingClockTime() {
+        let reminder = DailyReminderConfiguration(
+            isEnabled: true,
+            hour: 21,
+            minute: 35,
+            message: "记得查看今天的额度"
+        )
+
+        XCTAssertEqual(reminder.triggerDateComponents?.hour, 21)
+        XCTAssertEqual(reminder.triggerDateComponents?.minute, 35)
+    }
+
+    func testDailyReminderRequiresNonEmptyTrimmedMessage() {
+        let valid = DailyReminderConfiguration(
+            isEnabled: true,
+            hour: 9,
+            minute: 0,
+            message: "  开始今天的工作  "
+        )
+        let empty = DailyReminderConfiguration(
+            isEnabled: true,
+            hour: 9,
+            minute: 0,
+            message: "  \n "
+        )
+
+        XCTAssertEqual(valid.normalizedMessage, "开始今天的工作")
+        XCTAssertTrue(valid.isValid)
+        XCTAssertFalse(empty.isValid)
+    }
+
+    func testDailyReminderPreferencesStoreMultipleReminders() {
+        let suiteName = "QuotaDotTests.multiple-reminders"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let reminders = [
+            DailyReminderConfiguration(
+                id: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!,
+                isEnabled: true,
+                hour: 9,
+                minute: 0,
+                message: "上午提醒"
+            ),
+            DailyReminderConfiguration(
+                id: UUID(uuidString: "22222222-2222-2222-2222-222222222222")!,
+                isEnabled: false,
+                hour: 18,
+                minute: 30,
+                message: "晚上提醒"
+            )
+        ]
+
+        DailyReminderPreferences.saveAll(reminders, to: defaults)
+
+        XCTAssertEqual(DailyReminderPreferences.loadAll(from: defaults), reminders)
+    }
+
+    func testDailyReminderPreferencesMigratesLegacyReminder() {
+        let suiteName = "QuotaDotTests.legacy-reminder"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defaults.set(true, forKey: "QuotaDot.dailyReminder.enabled")
+        defaults.set(8, forKey: "QuotaDot.dailyReminder.hour")
+        defaults.set(45, forKey: "QuotaDot.dailyReminder.minute")
+        defaults.set("旧提醒", forKey: "QuotaDot.dailyReminder.message")
+
+        let migrated = DailyReminderPreferences.loadAll(from: defaults)
+
+        XCTAssertEqual(migrated.count, 1)
+        XCTAssertEqual(migrated[0].hour, 8)
+        XCTAssertEqual(migrated[0].minute, 45)
+        XCTAssertEqual(migrated[0].message, "旧提醒")
+    }
+
+    func testDailyReminderAcceptsOnlyHTTPWebLinks() {
+        let webReminder = DailyReminderConfiguration(
+            isEnabled: true,
+            hour: 10,
+            minute: 0,
+            message: "打开日报",
+            urlString: "  https://example.com/daily  "
+        )
+        let unsafeReminder = DailyReminderConfiguration(
+            isEnabled: true,
+            hour: 10,
+            minute: 0,
+            message: "不要执行脚本",
+            urlString: "javascript:alert(1)"
+        )
+
+        XCTAssertEqual(webReminder.destinationURL?.absoluteString, "https://example.com/daily")
+        XCTAssertTrue(webReminder.isValid)
+        XCTAssertNil(unsafeReminder.destinationURL)
+        XCTAssertFalse(unsafeReminder.isValid)
+    }
+
+    func testDailyReminderDecodesSavedDataWithoutURL() throws {
+        let json = #"[{"id":"11111111-1111-1111-1111-111111111111","isEnabled":true,"hour":9,"minute":0,"message":"旧数据"}]"#.data(using: .utf8)!
+
+        let reminders = try JSONDecoder().decode([DailyReminderConfiguration].self, from: json)
+
+        XCTAssertNil(reminders[0].urlString)
+        XCTAssertTrue(reminders[0].isValid)
+    }
+
+    func testOneTimeReminderBuildsOneNonRepeatingSchedule() {
+        let calendar = Calendar(identifier: .gregorian)
+        let fireDate = Date(timeIntervalSince1970: 1_800_000_000)
+        let reminder = DailyReminderConfiguration(
+            isEnabled: true,
+            hour: 0,
+            minute: 0,
+            message: "一次性提醒",
+            scheduleType: .once,
+            scheduledDate: fireDate
+        )
+
+        let schedules = reminder.notificationSchedules(
+            now: fireDate.addingTimeInterval(-60),
+            calendar: calendar
+        )
+
+        XCTAssertEqual(schedules.count, 1)
+        XCTAssertFalse(schedules[0].repeats)
+        XCTAssertEqual(schedules[0].dateComponents.year, calendar.component(.year, from: fireDate))
+        XCTAssertEqual(schedules[0].dateComponents.minute, calendar.component(.minute, from: fireDate))
+    }
+
+    func testWeeklyReminderBuildsOneRepeatingSchedulePerSelectedWeekday() {
+        let reminder = DailyReminderConfiguration(
+            isEnabled: true,
+            hour: 8,
+            minute: 30,
+            message: "工作日提醒",
+            scheduleType: .weekly,
+            weekdays: [2, 3, 4, 5, 6]
+        )
+
+        let schedules = reminder.notificationSchedules()
+
+        XCTAssertEqual(schedules.count, 5)
+        XCTAssertEqual(Set(schedules.compactMap(\.dateComponents.weekday)), [2, 3, 4, 5, 6])
+        XCTAssertTrue(schedules.allSatisfy(\.repeats))
+    }
+
+    func testLegacyURLReminderDefaultsToDailyOpenURLAction() throws {
+        let json = #"{"id":"11111111-1111-1111-1111-111111111111","isEnabled":true,"hour":9,"minute":0,"message":"旧数据","urlString":"https://example.com"}"#.data(using: .utf8)!
+
+        let reminder = try JSONDecoder().decode(DailyReminderConfiguration.self, from: json)
+
+        XCTAssertEqual(reminder.effectiveScheduleType, .daily)
+        XCTAssertEqual(reminder.effectiveActionType, .url)
+        XCTAssertEqual(reminder.effectiveActionValue, "https://example.com")
+    }
+
+    func testPythonClickActionRequiresAbsoluteScriptAndWorkingDirectory() {
+        let valid = DailyReminderConfiguration(
+            isEnabled: true,
+            hour: 9,
+            minute: 0,
+            message: "运行脚本",
+            actionType: .python,
+            actionValue: "/Users/example/automation/report.py",
+            workingDirectory: "/Users/example/automation"
+        )
+        let unsafe = DailyReminderConfiguration(
+            isEnabled: true,
+            hour: 9,
+            minute: 0,
+            message: "运行脚本",
+            actionType: .python,
+            actionValue: "report.py",
+            workingDirectory: "/Users/example/automation"
+        )
+
+        XCTAssertEqual(
+            valid.clickAction,
+            .python(
+                scriptPath: "/Users/example/automation/report.py",
+                workingDirectory: "/Users/example/automation"
+            )
+        )
+        XCTAssertTrue(valid.isValid)
+        XCTAssertNil(unsafe.clickAction)
+        XCTAssertFalse(unsafe.isValid)
+    }
+
+    func testReminderActionPayloadRoundTripsSupportedActions() throws {
+        let actions: [ReminderClickAction] = [
+            .none,
+            .openURL(try XCTUnwrap(URL(string: "https://example.com"))),
+            .openPath("/Applications/Notes.app"),
+            .shortcut("开始专注"),
+            .python(
+                scriptPath: "/Users/example/automation/report.py",
+                workingDirectory: "/Users/example/automation"
+            )
+        ]
+
+        for action in actions {
+            let payload = ReminderActionPayload(action: action)
+            XCTAssertEqual(payload.clickAction, action)
+        }
+    }
+
+    func testReminderSnoozeActionsMapToExpectedDelays() {
+        XCTAssertEqual(ReminderSnoozePolicy.delay(for: "QuotaDot.snooze.10m"), 10 * 60)
+        XCTAssertEqual(ReminderSnoozePolicy.delay(for: "QuotaDot.snooze.1h"), 60 * 60)
+        XCTAssertNil(ReminderSnoozePolicy.delay(for: "unknown"))
+    }
+
+    func testShortcutActionBuildsShortcutsProcessCommand() throws {
+        let command = try XCTUnwrap(
+            ReminderActionExecutor.processCommand(for: .shortcut("开始专注"))
+        )
+
+        XCTAssertEqual(command.executableURL.path, "/usr/bin/shortcuts")
+        XCTAssertEqual(command.arguments, ["run", "开始专注"])
+        XCTAssertNil(command.currentDirectoryURL)
+    }
+
+    func testPythonActionBuildsDirectProcessWithoutShell() throws {
+        let command = try XCTUnwrap(ReminderActionExecutor.processCommand(
+            for: .python(
+                scriptPath: "/Users/example/automation/report.py",
+                workingDirectory: "/Users/example/automation"
+            )
+        ))
+
+        XCTAssertEqual(command.executableURL.path, "/usr/bin/env")
+        XCTAssertEqual(command.arguments, ["python3", "/Users/example/automation/report.py"])
+        XCTAssertEqual(command.currentDirectoryURL?.path, "/Users/example/automation")
+        XCTAssertTrue(command.environment["PATH", default: ""].contains("/opt/homebrew/bin"))
+    }
+
+    @MainActor
+    func testReminderEditorProvidesExplicitChineseFieldLabels() {
+        let language = LanguageSettings()
+        language.language = .simplifiedChinese
+
+        XCTAssertEqual(language.text("settings.reminder.message"), "通知内容")
+        XCTAssertEqual(language.text("settings.reminder.url"), "点击后打开")
+        XCTAssertEqual(language.text("settings.reminder.schedule"), "提醒计划")
+        XCTAssertEqual(language.text("settings.reminder.action"), "点击动作")
+    }
+
     func testCreditsRemainCreditsAndAreNotResetOpportunities() throws {
         let json = #"[{"providerId":"codex","displayName":"Codex","lines":[{"type":"progress","label":"Credits","used":1000,"limit":1000}]}]"#.data(using: .utf8)!
         let result = try JSONDecoder().decode([ProviderUsage].self, from: json)
