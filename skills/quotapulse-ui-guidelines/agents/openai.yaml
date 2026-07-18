@@ -1,0 +1,4 @@
+interface:
+  display_name: "QuotaPulse UI Guidelines"
+  short_description: "Apply QuotaPulse SwiftUI form and control conventions"
+  default_prompt: "Apply the QuotaPulse UI guidelines when adding or editing settings and form controls."

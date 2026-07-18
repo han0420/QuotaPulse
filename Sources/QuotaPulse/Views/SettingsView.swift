@@ -4,6 +4,7 @@ import SwiftUI
 struct SettingsView: View {
     let language: LanguageSettings
     let notificationService: QuotaNotificationService
+    let store: QuotaStore
     @State private var loginItem = LoginItemManager()
     @State private var reminders: [DailyReminderConfiguration]
     @State private var reminderStatusKey: String?
@@ -11,13 +12,20 @@ struct SettingsView: View {
     @State private var quotaNotificationConfiguration: QuotaNotificationConfiguration
     @State private var quotaNotificationStatusKey: String?
     @State private var quotaNotificationStatusIsError = false
+    @State private var deepSeekConfiguration: DeepSeekBalanceConfiguration
+    @State private var deepSeekAPIKey = ""
+    @State private var deepSeekStatusKey: String?
+    @State private var deepSeekStatusIsError = false
     @Environment(\.scenePhase) private var scenePhase
 
-    init(language: LanguageSettings, notificationService: QuotaNotificationService) {
+    init(language: LanguageSettings, notificationService: QuotaNotificationService, store: QuotaStore) {
         self.language = language
         self.notificationService = notificationService
+        self.store = store
         _reminders = State(initialValue: DailyReminderPreferences.loadAll())
         _quotaNotificationConfiguration = State(initialValue: QuotaNotificationPreferences.load())
+        _deepSeekConfiguration = State(initialValue: DeepSeekBalanceConfiguration.load())
+        _deepSeekAPIKey = State(initialValue: DeepSeekAPIKeyStore.load() ?? "")
     }
 
     var body: some View {
@@ -73,6 +81,52 @@ struct SettingsView: View {
                 }
 
                 Text(language.text("settings.quotaNotification.detail"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section(language.text("settings.deepSeek")) {
+                Toggle(isOn: $deepSeekConfiguration.isEnabled) {
+                    Text(language.text("settings.deepSeek.enabled"))
+                }
+                HStack(spacing: 12) {
+                    Text(language.text("settings.deepSeek.apiKey"))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    SecureField("", text: $deepSeekAPIKey)
+                        .labelsHidden()
+                        .textFieldStyle(.roundedBorder)
+                        .frame(maxWidth: 360)
+                }
+                VStack(alignment: .leading, spacing: 7) {
+                    Text(language.text("settings.deepSeek.curlTemplate"))
+                        .font(.subheadline.weight(.medium))
+                    TextEditor(text: $deepSeekConfiguration.curlTemplate)
+                        .font(.system(.caption, design: .monospaced))
+                        .frame(minHeight: 70)
+                        .padding(4)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .stroke(Color.secondary.opacity(0.25))
+                        }
+                }
+                HStack {
+                    Button(language.text("settings.deepSeek.save")) {
+                        saveDeepSeekConfiguration()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    Spacer()
+                    if let deepSeekStatusKey {
+                        Label(
+                            language.text(deepSeekStatusKey),
+                            systemImage: deepSeekStatusIsError
+                                ? "exclamationmark.triangle.fill"
+                                : "checkmark.circle.fill"
+                        )
+                        .font(.caption)
+                        .foregroundStyle(deepSeekStatusIsError ? Color.orange : Color.green)
+                    }
+                }
+                Text(language.text("settings.deepSeek.detail"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -210,6 +264,33 @@ struct SettingsView: View {
         QuotaNotificationPreferences.save(quotaNotificationConfiguration)
         quotaNotificationStatusKey = "settings.quotaNotification.status.saved"
         quotaNotificationStatusIsError = false
+    }
+
+    private func saveDeepSeekConfiguration() {
+        switch DeepSeekSettingsValidation.validate(
+            isEnabled: deepSeekConfiguration.isEnabled,
+            apiKey: deepSeekAPIKey,
+            curlTemplate: deepSeekConfiguration.curlTemplate
+        ) {
+        case .missingAPIKey:
+            deepSeekStatusKey = "settings.deepSeek.status.missingAPIKey"
+            deepSeekStatusIsError = true
+        case .invalidTemplate:
+            deepSeekStatusKey = "settings.deepSeek.status.invalidTemplate"
+            deepSeekStatusIsError = true
+        case .valid:
+            DeepSeekAPIKeyStore.save(deepSeekAPIKey)
+            DeepSeekBalanceConfiguration.save(deepSeekConfiguration)
+            deepSeekStatusKey = "settings.deepSeek.status.saved"
+            deepSeekStatusIsError = false
+            Task {
+                let succeeded = await store.refreshDeepSeekBalance()
+                deepSeekStatusKey = succeeded
+                    ? "settings.deepSeek.status.updated"
+                    : "settings.deepSeek.status.queryFailed"
+                deepSeekStatusIsError = !succeeded
+            }
+        }
     }
 
     private func addReminder() {
@@ -390,6 +471,7 @@ private struct DailyReminderEditor: View {
                 Text(language.text("settings.reminder.action.path")).tag(ReminderActionType.openPath)
                 Text(language.text("settings.reminder.action.shortcut")).tag(ReminderActionType.shortcut)
                 Text(language.text("settings.reminder.action.python")).tag(ReminderActionType.python)
+                Text(language.text("settings.reminder.action.deepSeek")).tag(ReminderActionType.deepSeekBalance)
             }
             .labelsHidden()
             .disabled(!reminder.isEnabled)
@@ -437,6 +519,10 @@ private struct DailyReminderEditor: View {
                     chooseDirectory: true
                 )
                 Text(language.text("settings.reminder.action.python.detail"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            case .deepSeekBalance:
+                Text(language.text("settings.reminder.action.deepSeek.detail"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

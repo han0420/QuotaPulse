@@ -24,6 +24,8 @@ final class QuotaStore {
     private(set) var weather: WeatherSnapshot?
     private(set) var locationStatusKey: String?
     private(set) var codexResetCredits: CodexResetCredits?
+    private(set) var deepSeekBalance: DeepSeekBalance?
+    private(set) var deepSeekBalanceError = false
 
     private let client = OpenUsageClient()
     private let weatherClient = WeatherClient()
@@ -38,6 +40,7 @@ final class QuotaStore {
     private var openUsageTask: Task<Void, Never>?
     private var codexTask: Task<Void, Never>?
     private var claudeTask: Task<Void, Never>?
+    private var deepSeekTask: Task<Void, Never>?
     private var directCodexAvailable = false
     private var directClaudeAvailable = false
     private var previousQuotaRemaining: [QuotaReadingKey: Double]?
@@ -66,7 +69,8 @@ final class QuotaStore {
             weatherTask?.cancel()
             openUsageTask?.cancel()
             codexTask?.cancel()
-            claudeTask?.cancel()
+        claudeTask?.cancel()
+            deepSeekTask?.cancel()
         }
         await refresh()
         while !Task.isCancelled {
@@ -112,6 +116,7 @@ final class QuotaStore {
         launchOpenUsageRefresh()
         launchCodexRefresh()
         launchClaudeRefresh()
+        launchDeepSeekRefresh()
     }
 
     private func launchOpenUsageRefresh() {
@@ -145,6 +150,39 @@ final class QuotaStore {
             self.applyDirectClaude(result)
             self.claudeTask = nil
         }
+    }
+
+    private func launchDeepSeekRefresh() {
+        guard deepSeekTask == nil else { return }
+        let configuration = DeepSeekBalanceConfiguration.load()
+        guard configuration.isEnabled else {
+            deepSeekBalance = nil
+            deepSeekBalanceError = false
+            return
+        }
+        deepSeekTask = Task { [weak self] in
+            guard let self else { return }
+            _ = await self.refreshDeepSeekBalance(configuration: configuration)
+            guard !Task.isCancelled else { return }
+            self.deepSeekTask = nil
+        }
+    }
+
+    func refreshDeepSeekBalance() async -> Bool {
+        await refreshDeepSeekBalance(configuration: DeepSeekBalanceConfiguration.load())
+    }
+
+    private func refreshDeepSeekBalance(configuration: DeepSeekBalanceConfiguration) async -> Bool {
+        guard configuration.isEnabled else {
+            deepSeekBalance = nil
+            deepSeekBalanceError = false
+            return true
+        }
+        let result = await DeepSeekBalanceClient.fetch(configuration: configuration)
+        guard !Task.isCancelled else { return false }
+        deepSeekBalance = result
+        deepSeekBalanceError = result == nil
+        return result != nil
     }
 
     private func applyOpenUsage(_ result: [ProviderUsage]?) {

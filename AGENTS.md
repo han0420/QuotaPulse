@@ -46,7 +46,14 @@ Sources/QuotaPulse/
 Tests/QuotaPulseTests/  XCTest behavior, policy, parsing, and regression coverage
 docs/                 Architecture, specs, install, and release documentation
 script/               Build/run, security, assets, packaging, and release tools
+skills/               Project-local Codex skills for repeatable repository workflows
 ```
+
+## Project-local skills
+
+When the user asks to compile or install a new local version of the app, use [`skills/build-install-quotapulse/SKILL.md`](skills/build-install-quotapulse/SKILL.md). It standardizes building `QuotaPulse.app`, verifying its signature, and installing it to `/Applications/QuotaPulse.app`; installation requires explicit user authorization because it writes outside the repository and replaces the existing app.
+
+When adding or changing SwiftUI settings, forms, inputs, toggles, buttons, or other user-visible controls, use [`skills/quotapulse-ui-guidelines/SKILL.md`](skills/quotapulse-ui-guidelines/SKILL.md) and follow [`docs/UI_GUIDELINES.md`](docs/UI_GUIDELINES.md). This keeps new UI consistent with the existing grouped Form layout, localization, and save/status patterns.
 
 Key ownership:
 

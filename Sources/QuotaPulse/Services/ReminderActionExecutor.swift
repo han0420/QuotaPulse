@@ -36,6 +36,15 @@ enum ReminderActionExecutor {
                 currentDirectoryURL: URL(fileURLWithPath: workingDirectory, isDirectory: true),
                 environment: environment
             )
+        case .deepSeekBalance:
+            guard let apiKey = DeepSeekAPIKeyStore.load(),
+                  let command = DeepSeekBalanceClient.fixedCommand(apiKey: apiKey) else { return nil }
+            return ReminderProcessCommand(
+                executableURL: command.executableURL,
+                arguments: command.arguments,
+                currentDirectoryURL: nil,
+                environment: ProcessInfo.processInfo.environment
+            )
         case .none, .openURL, .openPath:
             return nil
         }
@@ -50,7 +59,7 @@ enum ReminderActionExecutor {
             NSWorkspace.shared.open(url)
         case .openPath(let path):
             NSWorkspace.shared.open(URL(fileURLWithPath: path))
-        case .shortcut, .python:
+        case .shortcut, .python, .deepSeekBalance:
             guard let command = processCommand(for: action) else { return }
             let process = Process()
             process.executableURL = command.executableURL

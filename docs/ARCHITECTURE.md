@@ -7,20 +7,15 @@ QuotaPulse 是 macOS 14+ 原生菜单栏应用，以 Swift 6 和 SwiftUI 构建�
 ## 运行时数据流
 
 ```text
-Codex / Claude 本机凭据
-          │
-          ▼
-Services 中的额度客户端 ──────┐
-                              ▼
-本机活动检测 ────────────▶ QuotaStore ───▶ 菜单栏 + 悬浮窗
-                              │
-天气与位置客户端 ──────────────┘
-                              │
-                              ▼
-                   QuotaNotificationService
+Codex / Claude 本机凭据 ──▶ Provider 额度客户端 ─┐
+                                                 │
+DeepSeek API Key + curl 模板 ─▶ DeepSeekBalanceClient ─▶ QuotaStore ─▶ 菜单栏 + 悬浮窗
+                                                 │             │
+本机活动检测 ────────────────────────────────────┤             ▼
+天气与位置客户端 ────────────────────────────────┘   QuotaNotificationService
 ```
 
-`QuotaStore` 是额度页面状态的单一汇聚点：并发刷新不同来源、合并 provider、记录上次读数、判断是否跨越提醒阈值，再发布可观察状态。视图不应自行访问额度网络接口。
+`QuotaStore` 是额度页面状态的单一汇聚点：并发刷新不同来源、合并 provider、维护可选 DeepSeek 余额、记录上次读数、判断是否跨越提醒阈值，再发布可观察状态。视图不应自行访问额度网络接口。
 
 ## 目录职责
 
@@ -35,20 +30,23 @@ Services 中的额度客户端 ──────┐
 | `Sources/QuotaPulse/Resources` | 本地化字符串和图片资源 |
 | `Tests/QuotaPulseTests` | 模型、策略、解析与关键行为测试 |
 | `script` | 构建、运行、安全检查、图标与发布脚本 |
+| `skills` | 项目级 Codex UI 与构建安装工作流 |
 
 ## 关键组件
 
 - `QuotaPulseApp` / `AppDelegate`：创建共享服务、store 和窗口控制器，启动刷新循环并恢复定时提醒。
-- `QuotaStore`：每 60 秒发起刷新；优先采用 direct client 的成功结果；按 provider/周期跟踪额度变化。
-- `CodexDirectClient`、`ClaudeDirectClient`、`OpenUsageClient`：额度来源适配器。新增来源时应保持凭据只读和服务直连原则。
+- `QuotaStore`：每 60 秒发起刷新；优先采用 direct client 的成功结果；按 provider/周期跟踪额度变化；保存 DeepSeek 设置后支持立即刷新。
+- `CodexDirectClient`、`ClaudeDirectClient`、`OpenUsageClient`：Codex/Claude 额度来源适配器。新增来源时应保持凭据只读和服务直连原则。
+- `DeepSeekBalanceClient`：把受限 curl 模板解析为结构化 `/usr/bin/curl` 参数，执行余额请求并解析官方响应；不通过 shell。
 - `QuotaNotificationConfiguration`：额度阈值提醒的配置、合法性、阈值生成与 `UserDefaults` 持久化。
 - `QuotaNotificationService`：系统通知权限、额度通知发送、定时提醒调度和稍后提醒动作。
-- `SettingsView`：额度提醒、定时提醒、语言和登录项设置入口。
+- `SettingsView`：额度提醒、DeepSeek API 余额、定时提醒、语言和登录项设置入口；保存 DeepSeek 设置后触发 store 刷新。
 - `LanguageSettings` 与 `*.lproj/Localizable.strings`：运行时中英文切换。新增用户可见文本必须同时提供英文和简体中文键值。
 
 ## 持久化与安全边界
 
 - 用户偏好使用 `UserDefaults`；需要迁移时提供向后兼容默认值和测试。
+- 经用户明确接受风险后，DeepSeek API Key 以明文保存在应用偏好中；不得写入日志。Codex/Claude 凭据不适用此例外。
 - 不把 token、用户名、凭据文件、精确位置或完整本机路径写入日志、fixture、文档或提交。
 - 不通过 shell 拼接执行用户配置的动作；进程参数必须结构化传递。
 - 新增网络端点、遥测、远程配置或凭据写入前，必须单独记录隐私与安全决策。

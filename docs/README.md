@@ -8,6 +8,7 @@
 | --- | --- |
 | 了解系统边界和代码职责 | [ARCHITECTURE.md](ARCHITECTURE.md) |
 | 开发或修改功能 | [SPEC_WORKFLOW.md](SPEC_WORKFLOW.md) |
+| 新增或修改设置页 UI | [UI_GUIDELINES.md](UI_GUIDELINES.md) |
 | 查看已有功能规格 | [specs/](specs/) |
 | 本地安装 | [INSTALL.md](INSTALL.md) |
 | 签名、 notarization 与发布 | [RELEASING.md](RELEASING.md) |
@@ -28,6 +29,8 @@
 | 登录后自动启动 | [specs/launch-at-login.md](specs/launch-at-login.md) |
 | 凭据与隐私边界 | [specs/credential-and-privacy.md](specs/credential-and-privacy.md) |
 | 品牌名称与兼容迁移 | [specs/brand-identity.md](specs/brand-identity.md) |
+| DeepSeek API 余额与 curl 动作 | [specs/deepseek-balance-curl.md](specs/deepseek-balance-curl.md) |
+| 设置窗口置前与 DeepSeek 保存反馈 | [specs/settings-window-and-deepseek-feedback.md](specs/settings-window-and-deepseek-feedback.md) |
 
 ## 文档维护原则
 

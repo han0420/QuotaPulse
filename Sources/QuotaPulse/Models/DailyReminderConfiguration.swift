@@ -12,6 +12,7 @@ enum ReminderActionType: String, Codable, CaseIterable, Sendable {
     case openPath
     case shortcut
     case python
+    case deepSeekBalance
 }
 
 enum ReminderClickAction: Equatable, Sendable {
@@ -20,6 +21,7 @@ enum ReminderClickAction: Equatable, Sendable {
     case openPath(String)
     case shortcut(String)
     case python(scriptPath: String, workingDirectory: String)
+    case deepSeekBalance
 }
 
 struct ReminderActionPayload: Equatable, Sendable {
@@ -43,6 +45,8 @@ struct ReminderActionPayload: Equatable, Sendable {
             self.init(type: .shortcut, value: name, workingDirectory: nil)
         case .python(let scriptPath, let workingDirectory):
             self.init(type: .python, value: scriptPath, workingDirectory: workingDirectory)
+        case .deepSeekBalance:
+            self.init(type: .deepSeekBalance, value: nil, workingDirectory: nil)
         }
     }
 
@@ -89,6 +93,8 @@ struct ReminderActionPayload: Equatable, Sendable {
                   let workingDirectory,
                   workingDirectory.hasPrefix("/") else { return nil }
             return .python(scriptPath: value, workingDirectory: workingDirectory)
+        case .deepSeekBalance:
+            return .deepSeekBalance
         }
     }
 }
@@ -202,6 +208,8 @@ struct DailyReminderConfiguration: Codable, Equatable, Identifiable, Sendable {
                   let workingDirectory = workingDirectory?.trimmingCharacters(in: .whitespacesAndNewlines),
                   workingDirectory.hasPrefix("/") else { return nil }
             return .python(scriptPath: scriptPath, workingDirectory: workingDirectory)
+        case .deepSeekBalance:
+            return .deepSeekBalance
         }
     }
 

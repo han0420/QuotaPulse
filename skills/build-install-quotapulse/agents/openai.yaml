@@ -1,0 +1,4 @@
+interface:
+  display_name: "Build and Install QuotaPulse"
+  short_description: "Build and install QuotaPulse into Applications"
+  default_prompt: "Build the latest QuotaPulse app, verify it, and install it to /Applications/QuotaPulse.app."

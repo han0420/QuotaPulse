@@ -65,6 +65,7 @@ struct FloatingQuotaView: View {
                         )
                     }
                 }
+                deepSeekSection
                 footer
             }
             .quotaLiquidGlass(cornerRadius: 28)
@@ -158,6 +159,24 @@ struct FloatingQuotaView: View {
         .foregroundStyle(AppColors.tertiaryText)
         .padding(.horizontal, 20)
         .frame(height: 34)
+    }
+
+    private var deepSeekSection: some View {
+        Group {
+            if let balance = store.deepSeekBalance {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(language.text("deepSeek.balance")).font(.system(size: 10, weight: .semibold))
+                    ForEach(balance.displayLines, id: \.self) { Text($0) }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 20).padding(.vertical, 8)
+            } else if store.deepSeekBalanceError {
+                Text(language.text("deepSeek.failed"))
+                    .font(.caption).foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 20).padding(.vertical, 8)
+            }
+        }
     }
 
     private var unavailableState: some View {

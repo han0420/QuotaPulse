@@ -12,7 +12,7 @@
   <img alt="MIT License" src="https://img.shields.io/badge/License-MIT-2563EB">
 </p>
 
-QuotaPulse is a native macOS menu bar and floating companion for Codex and Claude. It privately presents remaining quota, reset times, local activity, and configurable alerts in a restrained Liquid Glass interface.
+QuotaPulse is a native macOS menu bar and floating companion for Codex and Claude, with an optional DeepSeek API balance query. It privately presents remaining quota, reset times, local activity, and configurable alerts in a restrained Liquid Glass interface.
 
 ## Features
 
@@ -27,6 +27,8 @@ QuotaPulse is a native macOS menu bar and floating companion for Codex and Claud
 - Supports instant Simplified Chinese and English switching in the floating panel and Settings, with the preference saved locally.
 - Supports launching automatically after macOS login.
 - Supports configurable quota alerts with either one fixed interval or two consumption stages.
+- Optionally queries and displays DeepSeek API account balances from a user-configured curl template, with immediate save/query feedback.
+- Supports scheduled reminders whose click actions can open links or paths, run Shortcuts/Python, or execute the fixed DeepSeek balance request.
 
 ## Installation
 
@@ -45,6 +47,7 @@ QuotaPulse does not operate an account or quota relay server:
 
 - Codex credentials are loaded read-only from the local `CODEX_HOME/auth.json` file, which defaults to `~/.codex/auth.json`.
 - Claude credentials are read from Claude Code's local secure storage and are written back only when the official token refresh flow requires it.
+- The optional DeepSeek API key is stored as plain text in app preferences after the user enables and configures that feature.
 - Quota requests are sent directly to the corresponding provider endpoints.
 - Location coordinates are used only to request local weather. They are not combined with quota credentials or written to project logs.
 
@@ -82,6 +85,7 @@ Sources/QuotaPulse/
 script/       Build, icon generation, signing, and release scripts
 Tests/        Data parsing and policy tests
 docs/         Architecture, feature specs, installation, and release guides
+skills/       Project-local Codex workflows for UI conventions and local installation
 ```
 
 ## Contributing

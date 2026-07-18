@@ -24,7 +24,8 @@ struct QuotaPulseApp: App {
         Settings {
             SettingsView(
                 language: appDelegate.language,
-                notificationService: appDelegate.notificationService
+                notificationService: appDelegate.notificationService,
+                store: appDelegate.store
             )
         }
     }
@@ -68,6 +69,7 @@ private struct MenuBarContent: View {
     let store: QuotaStore
     let windowController: FloatingWindowController
     let language: LanguageSettings
+    @Environment(\.openSettings) private var openSettings
 
     var body: some View {
         if store.providers.isEmpty {
@@ -80,7 +82,7 @@ private struct MenuBarContent: View {
         Divider()
         Button(language.text("menu.show")) { windowController.expandAndShow() }
         Button(language.text("menu.refresh")) { Task { await store.refresh() } }
-        SettingsLink { Text(language.text("menu.settings")) }
+        Button(language.text("menu.settings")) { showSettings() }
         Divider()
         Button(language.text("menu.quit")) { NSApp.terminate(nil) }
     }
@@ -92,5 +94,14 @@ private struct MenuBarContent: View {
             parts.append("\(language.text("menu.weekly.short")) \(QuotaFormatters.percent(weekly.remainingPercent))")
         }
         return parts.joined(separator: " · ")
+    }
+
+    private func showSettings() {
+        openSettings()
+        NSApp.activate(ignoringOtherApps: true)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            NSApp.activate(ignoringOtherApps: true)
+            NSApp.windows.first { $0.isVisible && !($0 is NSPanel) }?.makeKeyAndOrderFront(nil)
+        }
     }
 }

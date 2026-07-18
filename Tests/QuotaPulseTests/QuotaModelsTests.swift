@@ -4,6 +4,69 @@ import XCTest
 @testable import QuotaPulse
 
 final class QuotaModelsTests: XCTestCase {
+    func testDeepSeekBalanceDecodesOfficialResponse() throws {
+        let data = #"{"is_available":true,"balance_infos":[{"currency":"CNY","total_balance":"110.00","granted_balance":"10.00","topped_up_balance":"100.00"}]}"#.data(using: .utf8)!
+        let balance = try DeepSeekBalanceParser.parse(data: data)
+        XCTAssertTrue(balance.isAvailable)
+        XCTAssertEqual(balance.displayLines, ["CNY 110.00"])
+    }
+
+    func testDeepSeekConfigurationDefaultsDisabledAndPersistsTemplate() {
+        let suiteName = "DeepSeekBalanceTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        let configuration = DeepSeekBalanceConfiguration.load(from: defaults)
+        XCTAssertFalse(configuration.isEnabled)
+        XCTAssertEqual(configuration.curlTemplate, DeepSeekBalanceConfiguration.defaultCurlTemplate)
+        var changed = configuration
+        changed.isEnabled = true
+        DeepSeekBalanceConfiguration.save(changed, to: defaults)
+        XCTAssertEqual(DeepSeekBalanceConfiguration.load(from: defaults), changed)
+    }
+
+    func testDeepSeekAPIKeyPersistsInUserDefaults() {
+        let suiteName = "DeepSeekAPIKeyTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        XCTAssertNil(DeepSeekAPIKeyStore.load(from: defaults))
+        DeepSeekAPIKeyStore.save("sk-local-test", to: defaults)
+        XCTAssertEqual(DeepSeekAPIKeyStore.load(from: defaults), "sk-local-test")
+    }
+
+    func testFixedDeepSeekCurlCommandUsesAPIKeyAsArgumentSubstitution() throws {
+        let command = try XCTUnwrap(DeepSeekBalanceClient.fixedCommand(apiKey: "test-key"))
+        XCTAssertEqual(command.executableURL.path, "/usr/bin/curl")
+        XCTAssertEqual(command.arguments, [
+            "-L", "-X", "GET", "https://api.deepseek.com/user/balance",
+            "-H", "Accept: application/json",
+            "-H", "Authorization: Bearer test-key"
+        ])
+    }
+
+    func testDeepSeekSettingsValidationRequiresKeyWhenEnabled() {
+        XCTAssertEqual(
+            DeepSeekSettingsValidation.validate(
+                isEnabled: true,
+                apiKey: "",
+                curlTemplate: DeepSeekBalanceConfiguration.defaultCurlTemplate
+            ),
+            .missingAPIKey
+        )
+    }
+
+    func testDeepSeekSettingsValidationAcceptsDisabledOrCompleteConfiguration() {
+        XCTAssertEqual(
+            DeepSeekSettingsValidation.validate(isEnabled: false, apiKey: "", curlTemplate: ""),
+            .valid
+        )
+        XCTAssertEqual(
+            DeepSeekSettingsValidation.validate(
+                isEnabled: true,
+                apiKey: "test-key",
+                curlTemplate: DeepSeekBalanceConfiguration.defaultCurlTemplate
+            ),
+            .valid
+        )
+    }
+
     func testBrandIdentityUsesQuotaPulsePositioning() {
         XCTAssertEqual(AppBrand.name, "QuotaPulse")
         XCTAssertEqual(AppBrand.bundleIdentifier, "com.cmsjcm.QuotaPulse")
