@@ -1,7 +1,7 @@
 # 悬浮窗与菜单栏
 
 - Status: Implemented
-- Last updated: 2026-07-19
+- Last updated: 2026-07-20
 - Owners: project maintainers
 
 ## 背景与目标
@@ -24,6 +24,7 @@
 - R7：额度健康 MUST 取所有可见周期最低值：大于 50% 健康，10%～50% 警告，10% 及以下危急。
 - R8：各额度环 MUST 独立按自身剩余比例着色，而不是共享最低健康色。
 - R9：provider 无数据时 MUST 提供加载或错误状态，而非崩溃或空白窗口。
+- R10：用户按住主鼠标键拖动悬浮窗时，窗口 MUST 保持拖动开始时的紧凑/展开状态；松开后 MUST 立即根据指针位置恢复 hover 判定。
 
 ## 验收场景
 
@@ -31,17 +32,19 @@
 - A2：Given 指针进入紧凑窗体，When hover 被检测，Then 展开且右上锚点保持稳定。
 - A3：Given Session 60%、Weekly 8%，When 渲染，Then菜单栏显示 8%，两个环分别使用其自身颜色。
 - A4：Given provider 数量变化，When 紧凑态同步，Then 窗口宽度随数量变化。
+- A5：Given 指针位于悬浮窗内或外，When 用户按住主鼠标键并拖动跨过窗口边界，Then 拖动期间不触发紧凑/展开切换，松开后再进行一次判定。
 
 ## 技术方案
 
-`FloatingWindowController` 管理无边框 `NSPanel`、锚点、hover 监控和紧凑/展开尺寸；`FloatingQuotaView` 选择布局；`ProviderCard` 与 `QuotaRing` 展示 provider 细节；`MenuBarQuotaGlyph` 和 `QuotaPulseApp` 构成菜单栏入口。
+`FloatingWindowController` 管理无边框 `NSPanel`、锚点、hover 监控和紧凑/展开尺寸；hover 状态转换由可测试策略决定，主鼠标键按住时不转换，避免与 AppKit 窗口拖动同时改写 frame。`FloatingQuotaView` 选择布局；`ProviderCard` 与 `QuotaRing` 展示 provider 细节；`MenuBarQuotaGlyph` 和 `QuotaPulseApp` 构成菜单栏入口。
 
 ## 测试计划与实现映射
 
 - 健康边界由 `QuotaModelsTests.testHealthThresholds` 覆盖。
 - UI：`Sources/QuotaPulse/Views/`。
 - 窗口行为：`Sources/QuotaPulse/Support/FloatingWindowController.swift`。
-- 手动检查 hover、拖动、全屏 Space、单/双 provider、不同健康等级和菜单栏刷新。
+- 拖动与 hover 互斥策略：`Tests/QuotaPulseTests/FloatingWindowInteractionPolicyTests.swift`。
+- 手动检查紧凑态和展开态拖动不漂移、松开后 hover 恢复，以及全屏 Space、单/双 provider、不同健康等级和菜单栏刷新。
 
 ## 未决问题
 

@@ -1,6 +1,17 @@
 import AppKit
 import SwiftUI
 
+enum FloatingWindowInteractionPolicy {
+    static func targetCompactState(
+        isCompact: Bool,
+        pointerIsInside: Bool,
+        isPrimaryButtonPressed: Bool
+    ) -> Bool {
+        guard !isPrimaryButtonPressed else { return isCompact }
+        return !pointerIsInside
+    }
+}
+
 @MainActor
 final class FloatingWindowController: NSObject {
     private let store: QuotaStore
@@ -97,10 +108,10 @@ final class FloatingWindowController: NSObject {
     }
 
     private func installHoverMonitor() {
-        hoverMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged]) { [weak self] _ in
+        hoverMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged, .leftMouseUp]) { [weak self] _ in
             Task { @MainActor in self?.evaluatePointer() }
         }
-        NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged]) { [weak self] event in
+        NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged, .leftMouseUp]) { [weak self] event in
             self?.evaluatePointer()
             return event
         }
@@ -110,11 +121,12 @@ final class FloatingWindowController: NSObject {
         guard let panel else { return }
         if compact { synchronizeCompactSize(panel) }
         let inside = panel.frame.insetBy(dx: -8, dy: -8).contains(NSEvent.mouseLocation)
-        if inside && compact {
-            setCompact(false)
-        } else if !inside && !compact {
-            setCompact(true)
-        }
+        let targetCompact = FloatingWindowInteractionPolicy.targetCompactState(
+            isCompact: compact,
+            pointerIsInside: inside,
+            isPrimaryButtonPressed: NSEvent.pressedMouseButtons & 1 != 0
+        )
+        setCompact(targetCompact)
     }
 
     private func synchronizeCompactSize(_ panel: NSPanel) {
