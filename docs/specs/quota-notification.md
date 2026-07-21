@@ -38,6 +38,9 @@
 - R10：设置界面 MUST 同时提供英文和简体中文文案。
 - R11：百分比输入行 MUST 使用左侧字段名、右侧紧凑数字输入框和 `%` 单位，且不得在输入区域重复渲染字段名。
 - R12：固定间隔和分两段模式的输入行 SHOULD 与“提醒与自动化”编辑器保持一致的水平对齐、常规行高和分隔节奏。
+- R13：设置页 MUST 显示当前系统通知授权状态，并在设置页激活时刷新状态。
+- R14：授权状态为“未决定”时，应用 MUST 自动发起一次系统权限申请；已拒绝时 MUST NOT 反复申请。
+- R15：已拒绝时设置页 MUST 提供打开 macOS 通知设置的入口。
 
 ## 合法性与边界
 
@@ -54,10 +57,13 @@
 - A5：Given 任一输入为 0、100、负数或大于 100，When 保存，Then 显示非法输入且不持久化。
 - A6：Given 剩余额度向上恢复，When 刷新，Then 不通知。
 - A7：Given 固定间隔或分两段模式，When 设置页以 620 点宽度显示，Then 字段名保持水平可读，右侧仅显示数字输入和 `%`，不存在逐字换行的重复标签。
+- A8：Given 通知状态未决定，When 打开设置页，Then 系统授权请求被触发且状态随后刷新。
+- A9：Given 通知状态已拒绝，When 打开设置页，Then 显示“已拒绝”和系统设置按钮，不重复弹出授权框。
+- A10：Given 用户在系统设置中修改通知权限，When QuotaPulse 设置页重新激活，Then 显示最新状态。
 
 ## 技术方案
 
-`QuotaNotificationConfiguration` 保存模式、分段位置与间隔，负责验证和阈值生成；`QuotaNotificationPreferences` 通过 `UserDefaults` 编解码配置。`QuotaStore` 在比较前后读数时加载配置，`QuotaNotificationPolicy` 只负责判断跨过的最低阈值，`SettingsView` 提供编辑和保存反馈。
+`QuotaNotificationConfiguration` 保存模式、分段位置与间隔，负责验证和阈值生成；`QuotaNotificationPreferences` 通过 `UserDefaults` 编解码配置。`QuotaStore` 在比较前后读数时加载配置，`QuotaNotificationPolicy` 只负责判断跨过的最低阈值。`QuotaNotificationService` 映射系统授权状态、按需申请权限并打开系统设置；`SettingsView` 提供配置、授权状态和保存反馈。
 
 ## 测试计划
 
@@ -68,6 +74,7 @@
 - 完整执行 `swift test` 和 `./script/security_check.sh`。
 - 手动检查设置页两种模式、双语切换、非法输入提示以及重启后配置恢复。
 - 手动检查固定间隔和分两段模式的输入行在中英文下均无重复标签、竖排文字或异常增高。
+- 手动检查未决定、允许、拒绝三种通知权限状态，以及从系统设置返回后的状态刷新。
 
 ## 实现映射
 
@@ -75,9 +82,9 @@
 | --- | --- |
 | R1–R6、R9 | `Sources/QuotaPulse/Models/QuotaNotificationConfiguration.swift` |
 | R7–R8 | `Sources/QuotaPulse/Services/QuotaNotificationService.swift`、`Sources/QuotaPulse/Stores/QuotaStore.swift` |
-| R10–R12 | `Sources/QuotaPulse/Views/SettingsView.swift`、`Sources/QuotaPulse/Resources/*.lproj/Localizable.strings` |
-| A1–A6 | `Tests/QuotaPulseTests/QuotaModelsTests.swift` |
+| R10–R15 | `Sources/QuotaPulse/Views/SettingsView.swift`、`Sources/QuotaPulse/Services/QuotaNotificationService.swift`、`Sources/QuotaPulse/Resources/*.lproj/Localizable.strings` |
+| A1–A6、A8 | `Tests/QuotaPulseTests/QuotaModelsTests.swift` |
 
 ## 未决问题
 
-无。
+无。`swift test` 40 项通过，`./script/build_and_run.sh --verify` 通过；拒绝权限后的系统设置入口和从系统设置返回后的状态刷新需要人工交互确认。安全检查受仓库既有 `/Users/example/...` fixture 规则问题阻断。

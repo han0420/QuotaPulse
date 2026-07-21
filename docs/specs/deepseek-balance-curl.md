@@ -57,4 +57,4 @@
 
 ## 未决问题
 
-无。API Key 明文偏好存储与 curl Header 参数已验证；`swift test` 39 项通过。安全检查仍受仓库既有 `/Users/example/...` fixture 规则问题阻断。
+无。API Key 明文偏好存储与 curl Header 参数已验证；`swift test` 40 项通过。安全检查仍受仓库既有 `/Users/example/...` fixture 规则问题阻断。

@@ -3,6 +3,15 @@ import Foundation
 import OSLog
 import UserNotifications
 
+enum NotificationAuthorizationState: Equatable, Sendable {
+    case unknown
+    case notDetermined
+    case denied
+    case authorized
+
+    var shouldRequestAuthorization: Bool { self == .notDetermined }
+}
+
 enum QuotaNotificationPolicy {
     static func crossedThreshold(
         previous: Double,
@@ -57,6 +66,33 @@ final class QuotaNotificationService: NSObject, UNUserNotificationCenterDelegate
             logger.error("Notification authorization failed: \(error.localizedDescription, privacy: .public)")
             return false
         }
+    }
+
+    func authorizationState() async -> NotificationAuthorizationState {
+        let settings = await center.notificationSettings()
+        switch settings.authorizationStatus {
+        case .notDetermined:
+            return .notDetermined
+        case .denied:
+            return .denied
+        case .authorized, .provisional, .ephemeral:
+            return .authorized
+        @unknown default:
+            return .unknown
+        }
+    }
+
+    func requestAuthorizationIfNeeded() async -> NotificationAuthorizationState {
+        let state = await authorizationState()
+        guard state.shouldRequestAuthorization else { return state }
+        _ = await requestAuthorization()
+        return await authorizationState()
+    }
+
+    @MainActor
+    func openSystemNotificationSettings() {
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension") else { return }
+        NSWorkspace.shared.open(url)
     }
 
     func send(title: String, body: String) async {

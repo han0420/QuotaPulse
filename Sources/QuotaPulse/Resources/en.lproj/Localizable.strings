@@ -2,8 +2,22 @@
 "menu.show" = "Show Quota Window";
 "menu.refresh" = "Refresh Now";
 "menu.settings" = "Settings…";
+"menu.exportConfiguration" = "Export Configuration…";
+"menu.importConfiguration" = "Import Configuration…";
 "menu.quit" = "Quit QuotaPulse";
 "menu.weekly.short" = "week";
+
+"backup.export.panelTitle" = "Export QuotaPulse Configuration";
+"backup.export.prompt" = "Export";
+"backup.export.success.title" = "Configuration Exported";
+"backup.export.success.message" = "Your non-sensitive QuotaPulse settings were saved.";
+"backup.export.failure.title" = "Could Not Export Configuration";
+"backup.import.panelTitle" = "Import QuotaPulse Configuration";
+"backup.import.prompt" = "Import";
+"backup.import.success.title" = "Configuration Imported";
+"backup.import.success.message" = "Your settings were restored and applied.";
+"backup.import.failure.title" = "Could Not Import Configuration";
+"backup.failure.message" = "Choose a valid QuotaPulse configuration backup and try again.";
 
 "header.switchLanguage" = "Switch language";
 "status.cached" = "Using cached data";
@@ -29,6 +43,12 @@
 "notification.quota.title" = "%d%% quota remaining";
 "notification.quota.body" = "%@ · %@ currently has %d%% remaining";
 "settings.quotaNotification" = "Quota Alerts";
+"settings.notificationPermission.checking" = "Checking notification permission…";
+"settings.notificationPermission.notDetermined" = "Notification permission not requested";
+"settings.notificationPermission.denied" = "System notifications are disabled";
+"settings.notificationPermission.authorized" = "System notifications are enabled";
+"settings.notificationPermission.request" = "Allow Notifications";
+"settings.notificationPermission.openSettings" = "Open System Settings";
 "settings.quotaNotification.mode" = "Alert pattern";
 "settings.quotaNotification.mode.single" = "Fixed interval";
 "settings.quotaNotification.mode.twoStage" = "Two stages";
@@ -40,6 +60,11 @@
 "settings.quotaNotification.detail" = "Intervals and the breakpoint must be integers from 1–99. The default is every 10%, with at most two stages.";
 "settings.quotaNotification.status.saved" = "Saved";
 "settings.quotaNotification.status.invalid" = "Enter valid whole numbers";
+"settings.localNotificationAPI" = "Local Notification API";
+"settings.localNotificationAPI.endpoint" = "Endpoint";
+"settings.localNotificationAPI.token" = "Bearer token";
+"settings.localNotificationAPI.copy" = "Copy";
+"settings.localNotificationAPI.detail" = "Only local programs can connect. Send a POST request with JSON fields title and body.";
 "notification.daily.title" = "QuotaPulse Reminder";
 "notification.snooze.10m" = "Snooze 10 Minutes";
 "notification.snooze.1h" = "Snooze 1 Hour";

@@ -17,29 +17,21 @@ struct MenuBarQuotaGlyph: View {
             NSColor.black.setStroke()
             NSColor.black.setFill()
 
-            let upperArc = NSBezierPath()
-            upperArc.appendArc(
-                withCenter: NSPoint(x: rect.midX, y: rect.midY),
-                radius: 6.2,
-                startAngle: 18,
-                endAngle: 166
-            )
-            upperArc.lineWidth = 2.15
-            upperArc.lineCapStyle = .round
-            upperArc.stroke()
+            let center = NSPoint(x: rect.midX, y: rect.midY)
+            for angles in [(36.0, 130.0), (146.0, 240.0), (256.0, 340.0)] {
+                let segment = NSBezierPath()
+                segment.appendArc(
+                    withCenter: center,
+                    radius: 5.7,
+                    startAngle: angles.0,
+                    endAngle: angles.1
+                )
+                segment.lineWidth = 2.55
+                segment.lineCapStyle = .round
+                segment.stroke()
+            }
 
-            let lowerArc = NSBezierPath()
-            lowerArc.appendArc(
-                withCenter: NSPoint(x: rect.midX, y: rect.midY),
-                radius: 6.2,
-                startAngle: 198,
-                endAngle: 346
-            )
-            lowerArc.lineWidth = 2.15
-            lowerArc.lineCapStyle = .round
-            lowerArc.stroke()
-
-            NSBezierPath(ovalIn: NSRect(x: 7.35, y: 7.35, width: 3.3, height: 3.3)).fill()
+            NSBezierPath(ovalIn: NSRect(x: 13.9, y: 7.6, width: 2.8, height: 2.8)).fill()
             return true
         }
         image.isTemplate = true

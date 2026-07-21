@@ -2,8 +2,22 @@
 "menu.show" = "显示悬浮额度";
 "menu.refresh" = "立即刷新";
 "menu.settings" = "设置…";
+"menu.exportConfiguration" = "导出配置…";
+"menu.importConfiguration" = "导入配置…";
 "menu.quit" = "退出 QuotaPulse";
 "menu.weekly.short" = "周";
+
+"backup.export.panelTitle" = "导出 QuotaPulse 配置";
+"backup.export.prompt" = "导出";
+"backup.export.success.title" = "配置已导出";
+"backup.export.success.message" = "QuotaPulse 的非敏感设置已保存。";
+"backup.export.failure.title" = "无法导出配置";
+"backup.import.panelTitle" = "导入 QuotaPulse 配置";
+"backup.import.prompt" = "导入";
+"backup.import.success.title" = "配置已导入";
+"backup.import.success.message" = "设置已恢复并应用。";
+"backup.import.failure.title" = "无法导入配置";
+"backup.failure.message" = "请选择有效的 QuotaPulse 配置备份后重试。";
 
 "header.switchLanguage" = "切换语言";
 "status.cached" = "部分数据暂存";
@@ -29,6 +43,12 @@
 "notification.quota.title" = "额度剩余 %d%%";
 "notification.quota.body" = "%@ · %@当前剩余 %d%%";
 "settings.quotaNotification" = "额度提醒";
+"settings.notificationPermission.checking" = "正在检查通知权限…";
+"settings.notificationPermission.notDetermined" = "尚未申请通知权限";
+"settings.notificationPermission.denied" = "系统通知已关闭";
+"settings.notificationPermission.authorized" = "系统通知已开启";
+"settings.notificationPermission.request" = "允许通知";
+"settings.notificationPermission.openSettings" = "打开系统设置";
 "settings.quotaNotification.mode" = "提醒方式";
 "settings.quotaNotification.mode.single" = "固定间隔";
 "settings.quotaNotification.mode.twoStage" = "分两段";
@@ -40,6 +60,11 @@
 "settings.quotaNotification.detail" = "间隔和分段位置须为 1–99 的整数。默认每消耗 10% 提醒一次，最多分两段。";
 "settings.quotaNotification.status.saved" = "已保存";
 "settings.quotaNotification.status.invalid" = "请输入合理的整数";
+"settings.localNotificationAPI" = "本机通知 API";
+"settings.localNotificationAPI.endpoint" = "接口地址";
+"settings.localNotificationAPI.token" = "Bearer 令牌";
+"settings.localNotificationAPI.copy" = "复制";
+"settings.localNotificationAPI.detail" = "仅本机程序可以连接。请使用 POST 请求，并传入 title 和 body JSON 字段。";
 "notification.daily.title" = "QuotaPulse 提醒";
 "notification.snooze.10m" = "稍后 10 分钟";
 "notification.snooze.1h" = "稍后 1 小时";

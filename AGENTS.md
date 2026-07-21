@@ -55,6 +55,8 @@ When the user asks to compile or install a new local version of the app, use [`s
 
 When adding or changing SwiftUI settings, forms, inputs, toggles, buttons, or other user-visible controls, use [`skills/quotapulse-ui-guidelines/SKILL.md`](skills/quotapulse-ui-guidelines/SKILL.md) and follow [`docs/UI_GUIDELINES.md`](docs/UI_GUIDELINES.md). This keeps new UI consistent with the existing grouped Form layout, localization, and save/status patterns.
 
+Before handing off, declaring completion, or preparing a change for commit, use [`skills/verify-quotapulse-change/SKILL.md`](skills/verify-quotapulse-change/SKILL.md). It checks specs, affected docs, both localizations, the full test suite, security audit, conditional app launch verification, project skill validity, and git hygiene; it reports blockers but does not edit, install, commit, or push.
+
 Key ownership:
 
 - `QuotaPulseApp.swift` (`QuotaPulseApp`): lifecycle and shared dependency construction.

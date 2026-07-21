@@ -12,6 +12,26 @@ enum FloatingWindowInteractionPolicy {
     }
 }
 
+enum FloatingWindowPlacementPolicy {
+    static let edgeInset: CGFloat = 18
+    static let minimumVisibleSize = CGSize(width: 32, height: 32)
+
+    static func defaultOrigin(visibleFrame: CGRect, windowSize: CGSize) -> CGPoint {
+        CGPoint(
+            x: visibleFrame.maxX - windowSize.width - edgeInset,
+            y: visibleFrame.maxY - windowSize.height - edgeInset
+        )
+    }
+
+    static func shouldRecover(windowFrame: CGRect, visibleFrames: [CGRect]) -> Bool {
+        !visibleFrames.contains { visibleFrame in
+            let intersection = windowFrame.intersection(visibleFrame)
+            return intersection.width >= minimumVisibleSize.width
+                && intersection.height >= minimumVisibleSize.height
+        }
+    }
+}
+
 @MainActor
 final class FloatingWindowController: NSObject {
     private let store: QuotaStore
@@ -55,8 +75,11 @@ final class FloatingWindowController: NSObject {
     }
 
     func expandAndShow() {
+        if panel == nil { show() }
+        guard let panel else { return }
         setCompact(false)
-        panel?.orderFrontRegardless()
+        position(panel, size: expandedSize)
+        panel.orderFrontRegardless()
     }
 
     private func rootView() -> some View {
@@ -71,7 +94,7 @@ final class FloatingWindowController: NSObject {
         isTransitioning = true
         compact = value
         let oldTopRight = NSPoint(x: panel.frame.maxX, y: panel.frame.maxY)
-        let size = value ? compactSize : NSSize(width: 356, height: expandedHeight)
+        let size = value ? compactSize : expandedSize
         let target = NSRect(x: oldTopRight.x - size.width, y: oldTopRight.y - size.height, width: size.width, height: size.height)
         panel.setFrame(target, display: false)
         panel.contentView = makeHostingView(compact: value)
@@ -102,9 +125,13 @@ final class FloatingWindowController: NSObject {
         return NSSize(width: CGFloat(count * 52 + max(count - 1, 0) * 8), height: 56)
     }
 
+    private var expandedSize: NSSize {
+        NSSize(width: 356, height: expandedHeight)
+    }
+
     private func position(_ panel: NSPanel, size: NSSize) {
-        guard let visible = NSScreen.main?.visibleFrame else { return }
-        panel.setFrameOrigin(NSPoint(x: visible.maxX - size.width - 18, y: visible.maxY - size.height - 18))
+        guard let visible = (NSScreen.main ?? NSScreen.screens.first)?.visibleFrame else { return }
+        panel.setFrameOrigin(FloatingWindowPlacementPolicy.defaultOrigin(visibleFrame: visible, windowSize: size))
     }
 
     private func installHoverMonitor() {
@@ -119,6 +146,13 @@ final class FloatingWindowController: NSObject {
 
     private func evaluatePointer() {
         guard let panel else { return }
+        if NSEvent.pressedMouseButtons & 1 == 0,
+           FloatingWindowPlacementPolicy.shouldRecover(
+               windowFrame: panel.frame,
+               visibleFrames: NSScreen.screens.map(\.visibleFrame)
+           ) {
+            position(panel, size: panel.frame.size)
+        }
         if compact { synchronizeCompactSize(panel) }
         let inside = panel.frame.insetBy(dx: -8, dy: -8).contains(NSEvent.mouseLocation)
         let targetCompact = FloatingWindowInteractionPolicy.targetCompactState(

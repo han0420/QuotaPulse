@@ -21,13 +21,17 @@ QuotaPulse is a native macOS menu bar and floating companion for Codex and Claud
 - Displays reset times, available Codex quota resets, and the expiration time of each reset opportunity when the service provides that data.
 - Detects local Codex and Claude activity and highlights only the provider currently in use.
 - Collapses into separate provider badges when the pointer leaves and expands into a unified detail panel on hover.
+- Restores the floating panel to a safe top-right position on the primary display whenever you choose “Show Quota Window” from the menu bar, and automatically recovers it after a drag leaves too little visible to grab.
 - Adapts the background to quota health and current local weather.
 - Colors each quota ring independently: blue above 50%, amber from 10% through 50%, and coral at 10% or below.
 - Keeps a compact dual-ring indicator and the lowest remaining percentage in the menu bar.
+- Runs as a single app instance to avoid duplicate quota refreshes, windows, and notifications.
+- Imports and exports non-sensitive app configuration from the menu bar for local backup and migration.
 - Supports instant Simplified Chinese and English switching in the floating panel and Settings, with the preference saved locally.
 - Supports launching automatically after macOS login.
 - Supports configurable quota alerts with either one fixed interval or two consumption stages.
 - Optionally queries and displays DeepSeek API account balances from a user-configured curl template, with immediate save/query feedback.
+- Provides a loopback-only HTTP notification API for local scripts and other programs. The endpoint and Bearer token are available in Settings.
 - Supports scheduled reminders whose click actions can open links or paths, run Shortcuts/Python, or execute the fixed DeepSeek balance request.
 
 ## Installation
@@ -48,6 +52,7 @@ QuotaPulse does not operate an account or quota relay server:
 - Codex credentials are loaded read-only from the local `CODEX_HOME/auth.json` file, which defaults to `~/.codex/auth.json`.
 - Claude credentials are read from Claude Code's local secure storage and are written back only when the official token refresh flow requires it.
 - The optional DeepSeek API key is stored as plain text in app preferences after the user enables and configures that feature.
+- Configuration backups exclude provider credentials, the DeepSeek API key, and the local notification API token.
 - Quota requests are sent directly to the corresponding provider endpoints.
 - Location coordinates are used only to request local weather. They are not combined with quota credentials or written to project logs.
 

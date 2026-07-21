@@ -23,6 +23,8 @@ QuotaPulse does not send authentication credentials to weather providers and doe
 
 QuotaPulse does not copy Codex or Claude authentication tokens into its preferences or logs. If the user enables DeepSeek balance queries, its API key is intentionally stored as plain text in app preferences after accepting this risk; it is never written to logs. System logs contain operational status and may include the resolved place name and location accuracy, but not raw coordinates or tokens.
 
+Configuration backups created from the menu bar contain only the selected language, quota-alert policy, non-sensitive DeepSeek display configuration, and scheduled reminders. They do not contain Codex or Claude credentials, the DeepSeek API key, or the local notification API Bearer token. Reminder text and configured action paths are included, so users should still store backup files appropriately.
+
 ## Revoking access
 
 Location access can be revoked in System Settings → Privacy & Security → Location Services. Login-at-startup can be disabled in QuotaPulse Settings or System Settings → General → Login Items.

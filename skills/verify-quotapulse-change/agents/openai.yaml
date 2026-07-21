@@ -1,0 +1,4 @@
+interface:
+  display_name: "Verify QuotaPulse Change"
+  short_description: "Run QuotaPulse completion checks and report failures"
+  default_prompt: "Verify the current QuotaPulse change against specs, tests, security, localization, UI build checks, and git hygiene without committing."

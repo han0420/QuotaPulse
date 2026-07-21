@@ -29,8 +29,16 @@
 | 登录后自动启动 | [specs/launch-at-login.md](specs/launch-at-login.md) |
 | 凭据与隐私边界 | [specs/credential-and-privacy.md](specs/credential-and-privacy.md) |
 | 品牌名称与兼容迁移 | [specs/brand-identity.md](specs/brand-identity.md) |
+| 应用与菜单栏图标系统 | [specs/brand-icon-system.md](specs/brand-icon-system.md) |
 | DeepSeek API 余额与 curl 动作 | [specs/deepseek-balance-curl.md](specs/deepseek-balance-curl.md) |
 | 设置窗口置前与 DeepSeek 保存反馈 | [specs/settings-window-and-deepseek-feedback.md](specs/settings-window-and-deepseek-feedback.md) |
+| 单实例运行与配置导入导出 | [specs/single-instance-and-configuration-backup.md](specs/single-instance-and-configuration-backup.md) |
+
+## 面向使用者的功能说明
+
+| 功能 | 文档 |
+| --- | --- |
+| 通过 HTTP 触发系统通知 | [LOCAL_NOTIFICATION_HTTP_API.md](LOCAL_NOTIFICATION_HTTP_API.md) |
 
 ## 文档维护原则
 

@@ -5,6 +5,7 @@ struct SettingsView: View {
     let language: LanguageSettings
     let notificationService: QuotaNotificationService
     let store: QuotaStore
+    let localNotificationHTTPToken: String
     @State private var loginItem = LoginItemManager()
     @State private var reminders: [DailyReminderConfiguration]
     @State private var reminderStatusKey: String?
@@ -12,16 +13,18 @@ struct SettingsView: View {
     @State private var quotaNotificationConfiguration: QuotaNotificationConfiguration
     @State private var quotaNotificationStatusKey: String?
     @State private var quotaNotificationStatusIsError = false
+    @State private var notificationAuthorizationState = NotificationAuthorizationState.unknown
     @State private var deepSeekConfiguration: DeepSeekBalanceConfiguration
     @State private var deepSeekAPIKey = ""
     @State private var deepSeekStatusKey: String?
     @State private var deepSeekStatusIsError = false
     @Environment(\.scenePhase) private var scenePhase
 
-    init(language: LanguageSettings, notificationService: QuotaNotificationService, store: QuotaStore) {
+    init(language: LanguageSettings, notificationService: QuotaNotificationService, store: QuotaStore, localNotificationHTTPToken: String = LocalNotificationHTTPTokenStore.loadOrCreate()) {
         self.language = language
         self.notificationService = notificationService
         self.store = store
+        self.localNotificationHTTPToken = localNotificationHTTPToken
         _reminders = State(initialValue: DailyReminderPreferences.loadAll())
         _quotaNotificationConfiguration = State(initialValue: QuotaNotificationPreferences.load())
         _deepSeekConfiguration = State(initialValue: DeepSeekBalanceConfiguration.load())
@@ -31,6 +34,8 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section(language.text("settings.quotaNotification")) {
+                notificationAuthorizationRow
+
                 Picker(
                     language.text("settings.quotaNotification.mode"),
                     selection: $quotaNotificationConfiguration.mode
@@ -127,6 +132,25 @@ struct SettingsView: View {
                     }
                 }
                 Text(language.text("settings.deepSeek.detail"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section(language.text("settings.localNotificationAPI")) {
+                LabeledContent(language.text("settings.localNotificationAPI.endpoint"), value: "http://127.0.0.1:\(LocalNotificationHTTPAPI.port)/v1/notifications")
+                HStack(spacing: 12) {
+                    Text(language.text("settings.localNotificationAPI.token"))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(localNotificationHTTPToken)
+                        .font(.system(.caption, design: .monospaced))
+                        .textSelection(.enabled)
+                        .lineLimit(1)
+                    Button(language.text("settings.localNotificationAPI.copy")) {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(localNotificationHTTPToken, forType: .string)
+                    }
+                }
+                Text(language.text("settings.localNotificationAPI.detail"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -233,9 +257,54 @@ struct SettingsView: View {
         .formStyle(.grouped)
         .frame(width: 620, height: 760)
         .onAppear { loginItem.refresh() }
+        .task { await refreshNotificationAuthorization(requestIfNeeded: true) }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { loginItem.refresh() }
+            if phase == .active {
+                loginItem.refresh()
+                Task { await refreshNotificationAuthorization(requestIfNeeded: false) }
+            }
         }
+    }
+
+    private var notificationAuthorizationRow: some View {
+        HStack(spacing: 12) {
+            Label(
+                language.text(notificationAuthorizationStatusKey),
+                systemImage: notificationAuthorizationState == .authorized
+                    ? "checkmark.circle.fill"
+                    : "exclamationmark.triangle.fill"
+            )
+            .foregroundStyle(notificationAuthorizationState == .authorized ? Color.green : Color.orange)
+            Spacer()
+            switch notificationAuthorizationState {
+            case .denied:
+                Button(language.text("settings.notificationPermission.openSettings")) {
+                    notificationService.openSystemNotificationSettings()
+                }
+            case .notDetermined:
+                Button(language.text("settings.notificationPermission.request")) {
+                    Task { await refreshNotificationAuthorization(requestIfNeeded: true) }
+                }
+            case .unknown, .authorized:
+                EmptyView()
+            }
+        }
+        .font(.caption)
+    }
+
+    private var notificationAuthorizationStatusKey: String {
+        switch notificationAuthorizationState {
+        case .unknown: "settings.notificationPermission.checking"
+        case .notDetermined: "settings.notificationPermission.notDetermined"
+        case .denied: "settings.notificationPermission.denied"
+        case .authorized: "settings.notificationPermission.authorized"
+        }
+    }
+
+    private func refreshNotificationAuthorization(requestIfNeeded: Bool) async {
+        notificationAuthorizationState = requestIfNeeded
+            ? await notificationService.requestAuthorizationIfNeeded()
+            : await notificationService.authorizationState()
     }
 
     private func percentField(_ title: String, value: Binding<Int>) -> some View {

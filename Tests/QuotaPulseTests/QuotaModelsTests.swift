@@ -4,6 +4,168 @@ import XCTest
 @testable import QuotaPulse
 
 final class QuotaModelsTests: XCTestCase {
+    func testSingleInstancePolicyKeepsOnlyLaunchWithoutAnotherProcess() {
+        XCTAssertFalse(
+            SingleInstancePolicy.shouldTerminateCurrentProcess(
+                currentProcessIdentifier: 42,
+                runningProcessIdentifiers: [42]
+            )
+        )
+        XCTAssertFalse(
+            SingleInstancePolicy.shouldTerminateCurrentProcess(
+                currentProcessIdentifier: 42,
+                runningProcessIdentifiers: [42, 42]
+            )
+        )
+        XCTAssertTrue(
+            SingleInstancePolicy.shouldTerminateCurrentProcess(
+                currentProcessIdentifier: 42,
+                runningProcessIdentifiers: [42, 77]
+            )
+        )
+    }
+
+    func testConfigurationBackupRoundTripsOnlyNonSensitivePreferences() throws {
+        let sourceName = "ConfigurationBackupSource-\(UUID().uuidString)"
+        let destinationName = "ConfigurationBackupDestination-\(UUID().uuidString)"
+        let source = try XCTUnwrap(UserDefaults(suiteName: sourceName))
+        let destination = try XCTUnwrap(UserDefaults(suiteName: destinationName))
+        defer {
+            source.removePersistentDomain(forName: sourceName)
+            destination.removePersistentDomain(forName: destinationName)
+        }
+
+        source.set(AppLanguage.simplifiedChinese.rawValue, forKey: "QuotaPulse.appLanguage")
+        let quota = QuotaNotificationConfiguration.twoStage(
+            breakpointPercent: 60,
+            firstIntervalPercent: 10,
+            secondIntervalPercent: 5
+        )
+        QuotaNotificationPreferences.save(quota, to: source)
+        let deepSeek = DeepSeekBalanceConfiguration(
+            isEnabled: true,
+            curlTemplate: "curl https://api.deepseek.com/user/balance -H 'Authorization: Bearer <API_KEY>' -H 'Debug: secret-api-key'"
+        )
+        DeepSeekBalanceConfiguration.save(deepSeek, to: source)
+        let reminder = DailyReminderConfiguration(
+            isEnabled: true,
+            hour: 8,
+            minute: 30,
+            message: "Daily review"
+        )
+        DailyReminderPreferences.saveAll([reminder], to: source)
+        DeepSeekAPIKeyStore.save("secret-api-key", to: source)
+        source.set("secret-local-token", forKey: "QuotaPulse.localNotificationHTTP.token")
+
+        let data = try AppConfigurationBackupService.exportData(from: source)
+        let json = try XCTUnwrap(String(data: data, encoding: .utf8))
+        XCTAssertFalse(json.contains("secret-api-key"))
+        XCTAssertFalse(json.contains("secret-local-token"))
+
+        let imported = try AppConfigurationBackupService.importData(data, to: destination)
+
+        XCTAssertEqual(imported.language, .simplifiedChinese)
+        XCTAssertEqual(destination.string(forKey: "QuotaPulse.appLanguage"), AppLanguage.simplifiedChinese.rawValue)
+        XCTAssertEqual(QuotaNotificationPreferences.load(from: destination), quota)
+        XCTAssertEqual(
+            DeepSeekBalanceConfiguration.load(from: destination).curlTemplate,
+            "curl https://api.deepseek.com/user/balance -H 'Authorization: Bearer <API_KEY>' -H 'Debug: <API_KEY>'"
+        )
+        XCTAssertEqual(DailyReminderPreferences.loadAll(from: destination), [reminder])
+        XCTAssertNil(DeepSeekAPIKeyStore.load(from: destination))
+        XCTAssertNil(destination.string(forKey: "QuotaPulse.localNotificationHTTP.token"))
+    }
+
+    func testConfigurationBackupRejectsUnsupportedVersionWithoutChangingPreferences() throws {
+        let suiteName = "ConfigurationBackupInvalid-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defaults.set(AppLanguage.english.rawValue, forKey: "QuotaPulse.appLanguage")
+
+        let data = #"{"version":99,"language":"zh-Hans","quotaNotification":{"mode":"singleStage","breakpointPercent":50,"firstIntervalPercent":10,"secondIntervalPercent":10},"deepSeek":{"isEnabled":false,"curlTemplate":"curl safe"},"dailyReminders":[]}"#.data(using: .utf8)!
+
+        XCTAssertThrowsError(try AppConfigurationBackupService.importData(data, to: defaults))
+        XCTAssertEqual(defaults.string(forKey: "QuotaPulse.appLanguage"), AppLanguage.english.rawValue)
+        XCTAssertThrowsError(
+            try AppConfigurationBackupService.importData(Data("not-json".utf8), to: defaults)
+        )
+        XCTAssertEqual(defaults.string(forKey: "QuotaPulse.appLanguage"), AppLanguage.english.rawValue)
+    }
+
+    func testConfigurationBackupRejectsInvalidQuotaConfigurationAtomically() throws {
+        let suiteName = "ConfigurationBackupInvalidQuota-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defaults.set(AppLanguage.english.rawValue, forKey: "QuotaPulse.appLanguage")
+
+        let data = #"{"version":1,"language":"zh-Hans","quotaNotification":{"mode":"singleStage","breakpointPercent":50,"firstIntervalPercent":0,"secondIntervalPercent":0},"deepSeek":{"isEnabled":false,"curlTemplate":"curl safe"},"dailyReminders":[]}"#.data(using: .utf8)!
+
+        XCTAssertThrowsError(try AppConfigurationBackupService.importData(data, to: defaults))
+        XCTAssertEqual(defaults.string(forKey: "QuotaPulse.appLanguage"), AppLanguage.english.rawValue)
+    }
+
+    func testConfigurationBackupRejectsStructurallyInvalidReminderAtomically() throws {
+        let suiteName = "ConfigurationBackupInvalidReminder-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defaults.set(AppLanguage.english.rawValue, forKey: "QuotaPulse.appLanguage")
+
+        let reminder = DailyReminderConfiguration(
+            isEnabled: true,
+            hour: 99,
+            minute: 0,
+            message: "Invalid time",
+            scheduleType: .daily,
+            actionType: ReminderActionType.none
+        )
+        let backup = AppConfigurationBackup(
+            version: AppConfigurationBackup.currentVersion,
+            language: .simplifiedChinese,
+            quotaNotification: .singleStage(intervalPercent: 10),
+            deepSeek: DeepSeekBalanceConfiguration(),
+            dailyReminders: [reminder]
+        )
+        let data = try JSONEncoder().encode(backup)
+
+        XCTAssertThrowsError(try AppConfigurationBackupService.importData(data, to: defaults))
+        XCTAssertEqual(defaults.string(forKey: "QuotaPulse.appLanguage"), AppLanguage.english.rawValue)
+    }
+
+    func testLocalNotificationHTTPAPIParsesAuthorizedNotificationRequest() throws {
+        let result = LocalNotificationHTTPRequest.parse(
+            raw: "POST /v1/notifications HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer secret\r\nContent-Length: 38\r\n\r\n{\"title\":\"Build\",\"body\":\"Done\"}",
+            token: "secret"
+        )
+        let request = try XCTUnwrap(try? result.get())
+
+        XCTAssertEqual(request.title, "Build")
+        XCTAssertEqual(request.body, "Done")
+    }
+
+    func testLocalNotificationHTTPAPIRejectsInvalidRequests() {
+        XCTAssertEqual(
+            LocalNotificationHTTPRequest.parse(
+                raw: "POST /v1/notifications HTTP/1.1\r\nAuthorization: Bearer wrong\r\n\r\n{}",
+                token: "secret"
+            ),
+            .failure(.unauthorized)
+        )
+        XCTAssertEqual(
+            LocalNotificationHTTPRequest.parse(
+                raw: "GET /v1/notifications HTTP/1.1\r\nAuthorization: Bearer secret\r\n\r\n",
+                token: "secret"
+            ),
+            .failure(.methodNotAllowed)
+        )
+    }
+
+
+    func testNotificationAuthorizationRequestsOnlyWhenUndetermined() {
+        XCTAssertTrue(NotificationAuthorizationState.notDetermined.shouldRequestAuthorization)
+        XCTAssertFalse(NotificationAuthorizationState.authorized.shouldRequestAuthorization)
+        XCTAssertFalse(NotificationAuthorizationState.denied.shouldRequestAuthorization)
+    }
+
     func testDeepSeekBalanceDecodesOfficialResponse() throws {
         let data = #"{"is_available":true,"balance_infos":[{"currency":"CNY","total_balance":"110.00","granted_balance":"10.00","topped_up_balance":"100.00"}]}"#.data(using: .utf8)!
         let balance = try DeepSeekBalanceParser.parse(data: data)

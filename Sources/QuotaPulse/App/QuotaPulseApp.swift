@@ -10,7 +10,9 @@ struct QuotaPulseApp: App {
             MenuBarContent(
                 store: appDelegate.store,
                 windowController: appDelegate.windowController,
-                language: appDelegate.language
+                language: appDelegate.language,
+                notificationService: appDelegate.notificationService,
+                backupController: appDelegate.backupController
             )
         } label: {
             HStack(spacing: 4) {
@@ -25,7 +27,8 @@ struct QuotaPulseApp: App {
             SettingsView(
                 language: appDelegate.language,
                 notificationService: appDelegate.notificationService,
-                store: appDelegate.store
+                store: appDelegate.store,
+                localNotificationHTTPToken: appDelegate.localNotificationHTTPToken
             )
         }
     }
@@ -35,12 +38,20 @@ struct QuotaPulseApp: App {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let language = LanguageSettings()
     let notificationService = QuotaNotificationService()
+    let backupController = ConfigurationBackupController()
+    let localNotificationHTTPToken = LocalNotificationHTTPTokenStore.loadOrCreate()
+    lazy var localNotificationHTTPAPI = try? LocalNotificationHTTPAPI(
+        token: localNotificationHTTPToken,
+        sendNotification: { [notificationService] title, body in await notificationService.send(title: title, body: body) }
+    )
     lazy var store = QuotaStore(notificationService: notificationService, language: language)
     lazy var windowController = FloatingWindowController(store: store, language: language)
     private var refreshTask: Task<Void, Never>?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        guard !activateExistingInstanceAndTerminateIfNeeded() else { return }
         NSApp.setActivationPolicy(.accessory)
+        localNotificationHTTPAPI?.start()
         windowController.show()
         refreshTask = Task { await store.start() }
         Task {
@@ -51,6 +62,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         refreshTask?.cancel()
+        localNotificationHTTPAPI?.stop()
     }
 
     private func restoreDailyReminders() async {
@@ -63,12 +75,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             snoozeOneHourTitle: language.text("notification.snooze.1h")
         )
     }
+
+    private func activateExistingInstanceAndTerminateIfNeeded() -> Bool {
+        guard let bundleIdentifier = Bundle.main.bundleIdentifier else { return false }
+        let currentProcessIdentifier = ProcessInfo.processInfo.processIdentifier
+        let runningApplications = NSRunningApplication.runningApplications(
+            withBundleIdentifier: bundleIdentifier
+        ).filter { !$0.isTerminated }
+        guard SingleInstancePolicy.shouldTerminateCurrentProcess(
+            currentProcessIdentifier: currentProcessIdentifier,
+            runningProcessIdentifiers: runningApplications.map(\.processIdentifier)
+        ) else { return false }
+
+        runningApplications.first { $0.processIdentifier != currentProcessIdentifier }?
+            .activate(options: [.activateAllWindows])
+        NSApp.terminate(nil)
+        return true
+    }
 }
 
 private struct MenuBarContent: View {
     let store: QuotaStore
     let windowController: FloatingWindowController
     let language: LanguageSettings
+    let notificationService: QuotaNotificationService
+    let backupController: ConfigurationBackupController
     @Environment(\.openSettings) private var openSettings
 
     var body: some View {
@@ -83,6 +114,11 @@ private struct MenuBarContent: View {
         Button(language.text("menu.show")) { windowController.expandAndShow() }
         Button(language.text("menu.refresh")) { Task { await store.refresh() } }
         Button(language.text("menu.settings")) { showSettings() }
+        Divider()
+        Button(language.text("menu.exportConfiguration")) {
+            backupController.exportConfiguration(language: language)
+        }
+        Button(language.text("menu.importConfiguration")) { importConfiguration() }
         Divider()
         Button(language.text("menu.quit")) { NSApp.terminate(nil) }
     }
@@ -102,6 +138,26 @@ private struct MenuBarContent: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             NSApp.activate(ignoringOtherApps: true)
             NSApp.windows.first { $0.isVisible && !($0 is NSPanel) }?.makeKeyAndOrderFront(nil)
+        }
+    }
+
+    private func importConfiguration() {
+        guard let result = backupController.chooseConfigurationToImport(language: language) else { return }
+        switch result {
+        case .failure:
+            backupController.showImportFailure(language: language)
+        case .success(let backup):
+            language.language = backup.language
+            Task {
+                _ = await notificationService.synchronizeReminders(
+                    backup.dailyReminders,
+                    title: language.text("notification.daily.title"),
+                    snoozeTenMinutesTitle: language.text("notification.snooze.10m"),
+                    snoozeOneHourTitle: language.text("notification.snooze.1h")
+                )
+                await store.refresh()
+                backupController.showImportSuccess(language: language)
+            }
         }
     }
 }

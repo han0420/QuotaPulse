@@ -1,7 +1,7 @@
 # 凭据与隐私边界
 
 - Status: Implemented
-- Last updated: 2026-07-19
+- Last updated: 2026-07-20
 - Owners: project maintainers
 
 ## 背景与目标
@@ -26,6 +26,7 @@ QuotaPulse 复用本机 Codex/Claude 已认证状态获取额度，同时最小�
 - R9：通知 Python/Shortcut 动作 MUST 直接构造进程及参数，不通过 shell。
 - R10：新增网络服务、遥测、远程配置或凭据写入 MUST 先形成独立隐私/安全决策。
 - R11：经用户明确接受明文风险后，DeepSeek API Key MUST 保存于应用 `UserDefaults`，MUST NOT 写入日志或访问 Keychain；该例外不适用于 Codex/Claude 凭据。
+- R12：用户导出的配置备份 MUST 使用字段白名单，MUST NOT 包含 provider 凭据、DeepSeek API Key 或本机通知 API Bearer token。
 
 ## 验收场景
 
@@ -35,10 +36,11 @@ QuotaPulse 复用本机 Codex/Claude 已认证状态获取额度，同时最小�
 - A4：Given 活动检测，When 扫描会话目录，Then 仅读文件类型和修改时间。
 - A5：Given Python 动作包含特殊字符，When 执行，Then 字符作为单一参数传递而非 shell 解释。
 - A6：Given 用户保存 DeepSeek API Key，When 应用重启并读取余额，Then 从应用偏好读取且不触发 Keychain 授权。
+- A7：Given 应用偏好中存在 API Key 与本机 token，When 导出配置，Then备份中不出现对应键或值。
 
 ## 技术方案与实现映射
 
-凭据边界位于 `CodexDirectClient.swift`、`ClaudeDirectClient.swift` 与 `DeepSeekBalanceClient.swift`；网络 client 使用独立 ephemeral session；活动隐私位于 `QuotaStore.swift`；动作边界位于 `ReminderActionExecutor.swift`。更广泛政策见 `PRIVACY.md`、`SECURITY.md`。
+凭据边界位于 `CodexDirectClient.swift`、`ClaudeDirectClient.swift` 与 `DeepSeekBalanceClient.swift`；网络 client 使用独立 ephemeral session；活动隐私位于 `QuotaStore.swift`；动作边界位于 `ReminderActionExecutor.swift`；备份白名单位于 `AppConfigurationBackup.swift`。更广泛政策见 `PRIVACY.md`、`SECURITY.md`。
 
 ## 测试计划
 

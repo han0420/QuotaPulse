@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 
-enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
+enum AppLanguage: String, Codable, CaseIterable, Identifiable, Sendable {
     case simplifiedChinese = "zh-Hans"
     case english = "en"
 
