@@ -30,6 +30,8 @@ Use this skill for local development installation requests such as “编译安�
    codesign --verify --deep --strict --verbose=2 /Applications/QuotaPulse.app
    ```
 
+   Do not keep a backup copy of the previous app bundle unless the user explicitly asks for one.
+
 5. Report the installed path, bundle identifier, version/build number, and whether ad-hoc signing was used.
 
 ## Safety and validation

@@ -46,6 +46,30 @@ enum ReminderSnoozePolicy {
     }
 }
 
+enum ReminderResponseCompletion {
+    @MainActor
+    static func perform(
+        _ action: ReminderClickAction,
+        execute: @MainActor (ReminderClickAction) -> Void = ReminderActionExecutor.perform,
+        completion: () -> Void
+    ) {
+        execute(action)
+        completion()
+    }
+}
+
+private final class NotificationResponseCompletion: @unchecked Sendable {
+    private let handler: () -> Void
+
+    init(_ handler: @escaping () -> Void) {
+        self.handler = handler
+    }
+
+    func call() {
+        handler()
+    }
+}
+
 final class QuotaNotificationService: NSObject, UNUserNotificationCenterDelegate, @unchecked Sendable {
     private static let dailyReminderIdentifierPrefix = "com.cmsjcm.QuotaPulse.daily-reminder"
     private static let reminderCategoryIdentifier = "QuotaPulse.reminder.actions"
@@ -233,10 +257,16 @@ final class QuotaNotificationService: NSObject, UNUserNotificationCenterDelegate
             userInfo: response.notification.request.content.userInfo
         )
         let clickAction = payload?.clickAction
-        completionHandler()
-        guard let clickAction else { return }
+        guard let clickAction else {
+            completionHandler()
+            return
+        }
+        let completion = NotificationResponseCompletion(completionHandler)
         Task { @MainActor in
-            ReminderActionExecutor.perform(clickAction)
+            ReminderResponseCompletion.perform(
+                clickAction,
+                completion: completion.call
+            )
         }
     }
 }

@@ -35,6 +35,7 @@
 "provider.idle" = "Stable";
 "quota.session" = "5-hour quota";
 "quota.weekly" = "Weekly quota";
+"quota.planRemaining" = "Plan %d%%";
 "quota.used" = "%d%% used";
 "quota.syncing" = "Syncing quota";
 "quota.resets" = "Resets %@";
@@ -126,6 +127,11 @@
 "credits.expires" = "Expires %@";
 
 "settings.general" = "General";
+"settings.weeklyPlan" = "Weekly quota plan";
+"settings.weeklyPlan.excludeWeekends" = "Exclude Saturday and Sunday";
+"settings.weeklyPlan.excludeWeekends.detail" = "Off uses all 7 days. On uses Monday through Friday and pauses the plan over weekends.";
+"settings.weeklyPlan.save" = "Save Plan";
+"settings.weeklyPlan.status.saved" = "Saved";
 "settings.language" = "Language";
 "settings.chinese" = "简体中文";
 "settings.english" = "English";
@@ -166,6 +172,8 @@
 "settings.deepSeek" = "AI API balance";
 "settings.deepSeek.enabled" = "Show DeepSeek balance";
 "settings.deepSeek.apiKey" = "API Key";
+"settings.deepSeek.apiKey.show" = "Show API Key";
+"settings.deepSeek.apiKey.hide" = "Hide API Key";
 "settings.deepSeek.curlTemplate" = "curl template";
 "settings.deepSeek.save" = "Save";
 "settings.deepSeek.status.saved" = "Saved; refreshing balance";

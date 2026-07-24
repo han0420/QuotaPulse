@@ -1,7 +1,7 @@
 # DeepSeek 余额与 curl 动作
 
 - Status: Implemented
-- Last updated: 2026-07-19
+- Last updated: 2026-07-21
 - Owners: project maintainers
 
 ## 背景与目标
@@ -18,6 +18,7 @@
 
 - 设置中新增“查询 AI API Key 额度”开关，默认关闭。
 - 开启后用户可配置 API Key 和 curl 模板；模板中的 `<API_KEY>` 由应用安全替换。
+- API Key 输入框默认遮罩显示，用户可用眼睛按钮临时切换为明文查看。
 - 开关开启且模板/API Key 有效时，面板最下方显示各币种 `total_balance`；失败时显示本地化错误状态。
 - 通知点击执行固定的 DeepSeek 余额 curl 请求。
 
@@ -28,6 +29,7 @@
 - R3: curl 通过 `/usr/bin/curl` 和结构化参数执行，不能把用户模板拼接进 shell。
 - R4: 解析 `is_available` 与 `balance_infos[].currency/total_balance`。
 - R5: 网络刷新不阻塞现有额度刷新。
+- R6: API Key 输入默认 MUST 使用遮罩显示，并提供一个可切换的明文查看控件；切换只影响当前设置窗口的可见性，不改变已保存内容。
 
 ## 合法性与边界
 
@@ -42,6 +44,7 @@
 - A3 — Given 通知点击，When 处理响应，Then 执行固定 DeepSeek curl 动作且不执行通知中传入的命令。
 - A4 — Given 非法响应，When 刷新，Then 保留其他额度并显示 DeepSeek 查询失败状态。
 - A5 — Given 新安装或升级，When 加载或保存 API Key，Then 只访问指定的 `UserDefaults`，不访问 Keychain。
+- A6 — Given DeepSeek 设置页，When 用户点击眼睛按钮，Then API Key 在遮罩与明文之间切换且保存内容不变。
 
 ## 技术方案
 

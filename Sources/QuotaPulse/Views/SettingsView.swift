@@ -13,9 +13,13 @@ struct SettingsView: View {
     @State private var quotaNotificationConfiguration: QuotaNotificationConfiguration
     @State private var quotaNotificationStatusKey: String?
     @State private var quotaNotificationStatusIsError = false
+    @State private var weeklyQuotaPlanConfiguration: WeeklyQuotaPlanConfiguration
+    @State private var weeklyQuotaPlanStatusKey: String?
     @State private var notificationAuthorizationState = NotificationAuthorizationState.unknown
     @State private var deepSeekConfiguration: DeepSeekBalanceConfiguration
     @State private var deepSeekAPIKey = ""
+    @State private var deepSeekAPIKeyIsVisible = false
+    @State private var deepSeekAPIKeyShouldSelectAll = false
     @State private var deepSeekStatusKey: String?
     @State private var deepSeekStatusIsError = false
     @Environment(\.scenePhase) private var scenePhase
@@ -27,6 +31,7 @@ struct SettingsView: View {
         self.localNotificationHTTPToken = localNotificationHTTPToken
         _reminders = State(initialValue: DailyReminderPreferences.loadAll())
         _quotaNotificationConfiguration = State(initialValue: QuotaNotificationPreferences.load())
+        _weeklyQuotaPlanConfiguration = State(initialValue: WeeklyQuotaPlanPreferences.load())
         _deepSeekConfiguration = State(initialValue: DeepSeekBalanceConfiguration.load())
         _deepSeekAPIKey = State(initialValue: DeepSeekAPIKeyStore.load() ?? "")
     }
@@ -90,6 +95,33 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
+            Section(language.text("settings.weeklyPlan")) {
+                Toggle(isOn: $weeklyQuotaPlanConfiguration.excludesWeekends) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(language.text("settings.weeklyPlan.excludeWeekends"))
+                        Text(language.text("settings.weeklyPlan.excludeWeekends.detail"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                HStack {
+                    Button(language.text("settings.weeklyPlan.save")) {
+                        saveWeeklyQuotaPlanConfiguration()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    Spacer()
+                    if let weeklyQuotaPlanStatusKey {
+                        Label(
+                            language.text(weeklyQuotaPlanStatusKey),
+                            systemImage: "checkmark.circle.fill"
+                        )
+                        .font(.caption)
+                        .foregroundStyle(Color.green)
+                    }
+                }
+            }
+
             Section(language.text("settings.deepSeek")) {
                 Toggle(isOn: $deepSeekConfiguration.isEnabled) {
                     Text(language.text("settings.deepSeek.enabled"))
@@ -97,10 +129,41 @@ struct SettingsView: View {
                 HStack(spacing: 12) {
                     Text(language.text("settings.deepSeek.apiKey"))
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    SecureField("", text: $deepSeekAPIKey)
-                        .labelsHidden()
-                        .textFieldStyle(.roundedBorder)
-                        .frame(maxWidth: 360)
+                    HStack(spacing: 8) {
+                        if deepSeekAPIKeyIsVisible {
+                            SelectableAPIKeyTextField(
+                                text: $deepSeekAPIKey,
+                                shouldSelectAll: $deepSeekAPIKeyShouldSelectAll
+                            )
+                            .frame(maxWidth: .infinity, minHeight: 28)
+                        } else {
+                            SecureField("", text: $deepSeekAPIKey)
+                                .labelsHidden()
+                                .textFieldStyle(.roundedBorder)
+                                .frame(maxWidth: .infinity)
+                        }
+
+                        Button {
+                            deepSeekAPIKeyIsVisible.toggle()
+                            if deepSeekAPIKeyIsVisible {
+                                deepSeekAPIKeyShouldSelectAll = true
+                            }
+                        } label: {
+                            Image(systemName: deepSeekAPIKeyIsVisible ? "eye.slash" : "eye")
+                                .imageScale(.medium)
+                                .frame(width: 16, height: 16)
+                                .padding(8)
+                        }
+                        .buttonStyle(.plain)
+                        .help(
+                            language.text(
+                                deepSeekAPIKeyIsVisible
+                                    ? "settings.deepSeek.apiKey.hide"
+                                    : "settings.deepSeek.apiKey.show"
+                            )
+                        )
+                    }
+                    .frame(maxWidth: 360)
                 }
                 VStack(alignment: .leading, spacing: 7) {
                     Text(language.text("settings.deepSeek.curlTemplate"))
@@ -335,6 +398,11 @@ struct SettingsView: View {
         quotaNotificationStatusIsError = false
     }
 
+    private func saveWeeklyQuotaPlanConfiguration() {
+        store.updateWeeklyQuotaPlan(weeklyQuotaPlanConfiguration)
+        weeklyQuotaPlanStatusKey = "settings.weeklyPlan.status.saved"
+    }
+
     private func saveDeepSeekConfiguration() {
         switch DeepSeekSettingsValidation.validate(
             isEnabled: deepSeekConfiguration.isEnabled,
@@ -430,6 +498,51 @@ struct SettingsView: View {
                 reminderStatusKey = "settings.reminder.status.failed"
                 reminderStatusIsError = true
             }
+        }
+    }
+}
+
+private struct SelectableAPIKeyTextField: NSViewRepresentable {
+    @Binding var text: String
+    @Binding var shouldSelectAll: Bool
+
+    func makeNSView(context: Context) -> NSTextField {
+        let textField = NSTextField(string: text)
+        textField.isBordered = true
+        textField.isBezeled = true
+        textField.focusRingType = .default
+        textField.font = .systemFont(ofSize: NSFont.systemFontSize)
+        textField.delegate = context.coordinator
+        return textField
+    }
+
+    func updateNSView(_ nsView: NSTextField, context: Context) {
+        if nsView.stringValue != text {
+            nsView.stringValue = text
+        }
+        if shouldSelectAll {
+            DispatchQueue.main.async {
+                nsView.window?.makeFirstResponder(nsView)
+                nsView.currentEditor()?.selectAll(nil)
+                shouldSelectAll = false
+            }
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(text: $text)
+    }
+
+    final class Coordinator: NSObject, NSTextFieldDelegate {
+        var text: Binding<String>
+
+        init(text: Binding<String>) {
+            self.text = text
+        }
+
+        func controlTextDidChange(_ obj: Notification) {
+            guard let textField = obj.object as? NSTextField else { return }
+            text.wrappedValue = textField.stringValue
         }
     }
 }

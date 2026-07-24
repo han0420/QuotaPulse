@@ -1,7 +1,7 @@
 # 定时提醒与点击动作
 
 - Status: Implemented
-- Last updated: 2026-07-19
+- Last updated: 2026-07-24
 - Owners: project maintainers
 
 ## 背景与目标
@@ -24,6 +24,7 @@
 - R7：通知 MUST 提供稍后 10 分钟和 1 小时动作。
 - R8：保存后 MUST 移除旧待处理请求并按当前有效配置重新同步。
 - R9：旧单提醒偏好和旧 URL 配置 MUST 迁移为兼容的新模型。
+- R10：通知点击动作 MUST 在向系统报告响应处理完成前发起，避免菜单栏应用进入非活动状态时丢失打开 URL 等动作。
 
 ## 验收场景
 
@@ -32,6 +33,7 @@
 - A3：Given `javascript:` URL 或相对脚本路径，When 保存，Then 拒绝配置。
 - A4：Given Python 动作，When 用户点击通知，Then 以参数数组运行 `python3` 且使用指定工作目录。
 - A5：Given 旧版提醒偏好，When 首次加载，Then 迁移为一条每日提醒。
+- A6：Given 含有 URL 动作的通知，When 用户点击通知，Then 先发起 URL 打开，再调用系统响应完成回调。
 
 ## 技术方案
 
@@ -39,7 +41,7 @@
 
 ## 测试计划与实现映射
 
-- 自动化覆盖计划、验证、迁移、payload 往返、稍后动作和无 shell 进程构造，位于 `QuotaModelsTests.swift`。
+- 自动化覆盖计划、验证、迁移、payload 往返、稍后动作、点击动作与系统完成回调顺序，以及无 shell 进程构造，位于 `QuotaModelsTests.swift`。
 - 实现：`Models/DailyReminderConfiguration.swift`、`Services/QuotaNotificationService.swift`、`Services/ReminderActionExecutor.swift`、`Views/SettingsView.swift`。
 - 手动检查通知权限拒绝、一次性触发、每周触发、点击动作及稍后提醒。
 

@@ -35,6 +35,7 @@
 "provider.idle" = "当前稳定";
 "quota.session" = "5 小时额度";
 "quota.weekly" = "本周额度";
+"quota.planRemaining" = "计划 %d%%";
 "quota.used" = "已使用 %d%%";
 "quota.syncing" = "等待同步额度";
 "quota.resets" = "%@ 重置";
@@ -126,6 +127,11 @@
 "credits.expires" = "%@ 到期";
 
 "settings.general" = "常规";
+"settings.weeklyPlan" = "周计划额度";
+"settings.weeklyPlan.excludeWeekends" = "排除周六、周日";
+"settings.weeklyPlan.excludeWeekends.detail" = "关闭时按 7 天计算；开启后只计算周一至周五，周末暂停计划进度。";
+"settings.weeklyPlan.save" = "保存计划";
+"settings.weeklyPlan.status.saved" = "已保存";
 "settings.language" = "显示语言";
 "settings.chinese" = "简体中文";
 "settings.english" = "English";
@@ -166,6 +172,8 @@
 "settings.deepSeek" = "AI API 额度";
 "settings.deepSeek.enabled" = "显示 DeepSeek 余额";
 "settings.deepSeek.apiKey" = "API Key";
+"settings.deepSeek.apiKey.show" = "显示 API Key";
+"settings.deepSeek.apiKey.hide" = "隐藏 API Key";
 "settings.deepSeek.curlTemplate" = "curl 模板";
 "settings.deepSeek.save" = "保存";
 "settings.deepSeek.status.saved" = "已保存，正在刷新余额";

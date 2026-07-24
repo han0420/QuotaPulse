@@ -66,6 +66,56 @@ struct UsageLine: Decodable, Identifiable, Sendable {
     }
 }
 
+enum WeeklyQuotaBudget {
+    static func plannedRemaining(
+        resetAt: Date?,
+        periodDurationMs: Double?,
+        excludingWeekends: Bool = false,
+        calendar: Calendar = .current,
+        now: Date = .now
+    ) -> Double? {
+        guard let resetAt,
+              let periodDurationMs,
+              periodDurationMs > 0 else { return nil }
+        let duration = periodDurationMs / 1_000
+        let periodStart = resetAt.addingTimeInterval(-duration)
+        let elapsed = now.timeIntervalSince(periodStart)
+        guard elapsed > 0, elapsed <= duration else { return nil }
+        guard excludingWeekends else { return 1 - elapsed / duration }
+
+        let totalBudgetTime = includedWeekdayDuration(
+            from: periodStart,
+            to: resetAt,
+            calendar: calendar
+        )
+        guard totalBudgetTime > 0 else { return nil }
+        let elapsedBudgetTime = includedWeekdayDuration(
+            from: periodStart,
+            to: now,
+            calendar: calendar
+        )
+        return 1 - elapsedBudgetTime / totalBudgetTime
+    }
+
+    private static func includedWeekdayDuration(
+        from start: Date,
+        to end: Date,
+        calendar: Calendar
+    ) -> TimeInterval {
+        var cursor = start
+        var total: TimeInterval = 0
+        while cursor < end {
+            guard let day = calendar.dateInterval(of: .day, for: cursor) else { return total }
+            let intervalEnd = min(day.end, end)
+            if !calendar.isDateInWeekend(cursor) {
+                total += intervalEnd.timeIntervalSince(cursor)
+            }
+            cursor = intervalEnd
+        }
+        return total
+    }
+}
+
 enum QuotaHealth: String, Sendable {
     case healthy = "健康"
     case warning = "警告"

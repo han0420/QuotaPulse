@@ -61,6 +61,7 @@ struct FloatingQuotaView: View {
                             provider: provider,
                             isConsuming: activeProviderIds.contains(provider.id),
                             resetCredits: provider.providerId.lowercased() == "codex" ? store.codexResetCredits : nil,
+                            weeklyQuotaPlanConfiguration: store.weeklyQuotaPlanConfiguration,
                             language: language
                         )
                     }

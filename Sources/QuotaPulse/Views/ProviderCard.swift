@@ -5,6 +5,7 @@ struct ProviderCard: View {
     let provider: ProviderUsage
     let isConsuming: Bool
     let resetCredits: CodexResetCredits?
+    let weeklyQuotaPlanConfiguration: WeeklyQuotaPlanConfiguration
     let language: LanguageSettings
     @State private var showResetCredits = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -78,10 +79,18 @@ struct ProviderCard: View {
     }
 
     private func metric(title: String, line: UsageLine, emphasized: Bool) -> some View {
-        QuotaRing(
+        let plannedRemaining = provider.weekly?.id == line.id
+            ? WeeklyQuotaBudget.plannedRemaining(
+                resetAt: provider.effectiveResetAt(for: line),
+                periodDurationMs: line.periodDurationMs,
+                excludingWeekends: weeklyQuotaPlanConfiguration.excludesWeekends
+            )
+            : nil
+        return QuotaRing(
             title: title,
             remaining: line.remainingPercent,
             resetAt: provider.effectiveResetAt(for: line),
+            plannedRemaining: plannedRemaining,
             expanded: emphasized && provider.session == nil,
             language: language
         )

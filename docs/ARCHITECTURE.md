@@ -39,6 +39,7 @@ DeepSeek API Key + curl 模板 ─▶ DeepSeekBalanceClient ─▶ QuotaStore �
 - `SingleInstancePolicy`：为 AppDelegate 提供可测试的进程判定；应用包同时通过 Launch Services 声明禁止多实例。
 - `AppConfigurationBackupService` / `ConfigurationBackupController`：分别负责版本化非敏感配置的白名单编解码，以及菜单栏系统文件面板交互。
 - `QuotaStore`：每 60 秒发起刷新；优先采用 direct client 的成功结果；按 provider/周期跟踪额度变化；保存 DeepSeek 设置后支持立即刷新。
+- `WeeklyQuotaPlanConfiguration` / `WeeklyQuotaBudget`：持久化周计划是否排除周末，并按真实额度周期与本地日历计算计划剩余额度；配置由 `QuotaStore` 共享给设置页和浮窗。
 - `CodexDirectClient`、`ClaudeDirectClient`、`OpenUsageClient`：Codex/Claude 额度来源适配器。新增来源时应保持凭据只读和服务直连原则。
 - `DeepSeekBalanceClient`：把受限 curl 模板解析为结构化 `/usr/bin/curl` 参数，执行余额请求并解析官方响应；不通过 shell。
 - `QuotaNotificationConfiguration`：额度阈值提醒的配置、合法性、阈值生成与 `UserDefaults` 持久化。

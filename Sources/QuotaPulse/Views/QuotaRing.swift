@@ -4,6 +4,7 @@ struct QuotaRing: View {
     let title: String
     let remaining: Double?
     let resetAt: Date?
+    var plannedRemaining: Double?
     var expanded = false
     let language: LanguageSettings
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -54,15 +55,35 @@ struct QuotaRing: View {
                 )
                 .rotationEffect(.degrees(-90))
                 .shadow(color: AppColors.accentIndigo.opacity(0.22), radius: 10)
+            if let plannedRemaining {
+                Circle()
+                    .trim(from: max(plannedRemaining - 0.008, 0), to: min(plannedRemaining + 0.008, 1))
+                    .stroke(
+                        Color.orange,
+                        style: StrokeStyle(lineWidth: 10, lineCap: .round)
+                    )
+                    .rotationEffect(.degrees(-90))
+                    .shadow(color: Color.white.opacity(0.9), radius: 1)
+            }
             Circle()
                 .stroke(AppColors.glassStroke.opacity(0.72), lineWidth: 0.7)
                 .padding(5)
-            HStack(alignment: .firstTextBaseline, spacing: 1) {
-                Text(percentNumber)
-                    .font(.system(size: expanded ? 24 : 20, weight: .semibold, design: .rounded))
-                Text("%")
-                    .font(.system(size: 8, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColors.secondaryText)
+            VStack(spacing: -1) {
+                HStack(alignment: .firstTextBaseline, spacing: 1) {
+                    Text(percentNumber)
+                        .font(.system(size: expanded ? 24 : 20, weight: .semibold, design: .rounded))
+                    Text("%")
+                        .font(.system(size: 8, weight: .bold, design: .rounded))
+                        .foregroundStyle(AppColors.secondaryText)
+                }
+                if let plannedRemaining {
+                    Text(language.text(
+                        "quota.planRemaining",
+                        Int((plannedRemaining * 100).rounded())
+                    ))
+                        .font(.system(size: 6.5, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Color.orange)
+                }
             }
             .monospacedDigit()
             .foregroundStyle(AppColors.strongText)

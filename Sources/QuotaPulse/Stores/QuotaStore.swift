@@ -26,6 +26,7 @@ final class QuotaStore {
     private(set) var codexResetCredits: CodexResetCredits?
     private(set) var deepSeekBalance: DeepSeekBalance?
     private(set) var deepSeekBalanceError = false
+    private(set) var weeklyQuotaPlanConfiguration = WeeklyQuotaPlanPreferences.load()
 
     private let client = OpenUsageClient()
     private let weatherClient = WeatherClient()
@@ -60,6 +61,11 @@ final class QuotaStore {
     }
 
     var health: QuotaHealth { QuotaHealth(remaining: lowestRemaining) }
+
+    func updateWeeklyQuotaPlan(_ configuration: WeeklyQuotaPlanConfiguration) {
+        WeeklyQuotaPlanPreferences.save(configuration)
+        weeklyQuotaPlanConfiguration = configuration
+    }
 
     func start() async {
         activityTask = Task { await monitorLocalActivity() }

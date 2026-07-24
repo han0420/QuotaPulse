@@ -21,6 +21,7 @@
 | --- | --- |
 | Codex/Claude 额度获取与合并 | [specs/provider-quota-data.md](specs/provider-quota-data.md) |
 | 悬浮窗与菜单栏呈现 | [specs/floating-window.md](specs/floating-window.md) |
+| 周计划额度与工作日预算 | [specs/weekly-quota-plan.md](specs/weekly-quota-plan.md) |
 | 可配置额度阈值提醒 | [specs/quota-notification.md](specs/quota-notification.md) |
 | 定时提醒与点击动作 | [specs/scheduled-reminders.md](specs/scheduled-reminders.md) |
 | 天气背景与定位 | [specs/weather-background.md](specs/weather-background.md) |

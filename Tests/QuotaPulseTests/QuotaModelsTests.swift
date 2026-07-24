@@ -257,6 +257,90 @@ final class QuotaModelsTests: XCTestCase {
         XCTAssertEqual(QuotaHealth(remaining: 0.10), .critical)
     }
 
+    func testWeeklyQuotaBudgetRequiresAnActiveValidPeriod() {
+        let resetAt = Date(timeIntervalSince1970: 7 * 24 * 60 * 60)
+        let durationMs = 7.0 * 24 * 60 * 60 * 1_000
+
+        XCTAssertNil(WeeklyQuotaBudget.plannedRemaining(
+            resetAt: resetAt,
+            periodDurationMs: durationMs,
+            now: Date(timeIntervalSince1970: 0)
+        ))
+        XCTAssertNil(WeeklyQuotaBudget.plannedRemaining(
+            resetAt: resetAt,
+            periodDurationMs: nil,
+            now: Date(timeIntervalSince1970: 24 * 60 * 60)
+        ))
+    }
+
+    func testWeeklyQuotaBudgetComputesPlannedRemainingOnTheRingScale() throws {
+        let resetAt = Date(timeIntervalSince1970: 7 * 24 * 60 * 60)
+        let durationMs = 7.0 * 24 * 60 * 60 * 1_000
+
+        XCTAssertEqual(
+            try XCTUnwrap(WeeklyQuotaBudget.plannedRemaining(
+                resetAt: resetAt,
+                periodDurationMs: durationMs,
+                now: Date(timeIntervalSince1970: 1 * 24 * 60 * 60)
+            )),
+            6.0 / 7.0,
+            accuracy: 0.001
+        )
+        XCTAssertEqual(
+            try XCTUnwrap(WeeklyQuotaBudget.plannedRemaining(
+                resetAt: resetAt,
+                periodDurationMs: durationMs,
+                now: Date(timeIntervalSince1970: 4 * 24 * 60 * 60)
+            )),
+            3.0 / 7.0,
+            accuracy: 0.001
+        )
+    }
+
+    func testWeeklyQuotaPlanConfigurationDefaultsToSevenDaysAndPersistsWeekendChoice() throws {
+        let suiteName = "WeeklyQuotaPlanTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        XCTAssertFalse(WeeklyQuotaPlanPreferences.load(from: defaults).excludesWeekends)
+        WeeklyQuotaPlanPreferences.save(
+            WeeklyQuotaPlanConfiguration(excludesWeekends: true),
+            to: defaults
+        )
+        XCTAssertTrue(WeeklyQuotaPlanPreferences.load(from: defaults).excludesWeekends)
+
+        defaults.set(
+            Data("invalid".utf8),
+            forKey: "QuotaPulse.weeklyQuotaPlan.configuration"
+        )
+        XCTAssertFalse(WeeklyQuotaPlanPreferences.load(from: defaults).excludesWeekends)
+    }
+
+    func testWeeklyQuotaBudgetFreezesAcrossExcludedWeekend() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try XCTUnwrap(TimeZone(secondsFromGMT: 0))
+        let start = try XCTUnwrap(calendar.date(from: DateComponents(
+            year: 2026, month: 7, day: 1
+        )))
+        let resetAt = try XCTUnwrap(calendar.date(byAdding: .day, value: 7, to: start))
+        let saturday = try XCTUnwrap(calendar.date(byAdding: .hour, value: 84, to: start))
+        let sunday = try XCTUnwrap(calendar.date(byAdding: .day, value: 1, to: saturday))
+
+        for now in [saturday, sunday] {
+            XCTAssertEqual(
+                try XCTUnwrap(WeeklyQuotaBudget.plannedRemaining(
+                    resetAt: resetAt,
+                    periodDurationMs: 7 * 24 * 60 * 60 * 1_000,
+                    excludingWeekends: true,
+                    calendar: calendar,
+                    now: now
+                )),
+                0.40,
+                accuracy: 0.001
+            )
+        }
+    }
+
     func testQuotaNotificationDetectsCrossedTenPercentBoundary() {
         XCTAssertEqual(
             QuotaNotificationPolicy.crossedThreshold(previous: 0.91, current: 0.89),
@@ -556,6 +640,22 @@ final class QuotaModelsTests: XCTestCase {
         XCTAssertEqual(ReminderSnoozePolicy.delay(for: "QuotaPulse.snooze.10m"), 10 * 60)
         XCTAssertEqual(ReminderSnoozePolicy.delay(for: "QuotaPulse.snooze.1h"), 60 * 60)
         XCTAssertNil(ReminderSnoozePolicy.delay(for: "unknown"))
+    }
+
+    @MainActor
+    func testReminderClickActionRunsBeforeSystemResponseCompletion() throws {
+        let action = ReminderClickAction.openURL(
+            try XCTUnwrap(URL(string: "https://example.com/daily"))
+        )
+        var events: [String] = []
+
+        ReminderResponseCompletion.perform(
+            action,
+            execute: { _ in events.append("action") },
+            completion: { events.append("completion") }
+        )
+
+        XCTAssertEqual(events, ["action", "completion"])
     }
 
     func testShortcutActionBuildsShortcutsProcessCommand() throws {
