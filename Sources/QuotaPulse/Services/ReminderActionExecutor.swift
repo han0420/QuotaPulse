@@ -54,11 +54,22 @@ enum ReminderActionExecutor {
     static func perform(_ action: ReminderClickAction) {
         switch action {
         case .none:
+            logger.info("Reminder action completed type=none result=no-op")
             return
         case .openURL(let url):
-            NSWorkspace.shared.open(url)
+            let succeeded = NSWorkspace.shared.open(url)
+            if succeeded {
+                logger.info("Reminder action completed type=openURL result=success")
+            } else {
+                logger.error("Reminder action completed type=openURL result=failed")
+            }
         case .openPath(let path):
-            NSWorkspace.shared.open(URL(fileURLWithPath: path))
+            let succeeded = NSWorkspace.shared.open(URL(fileURLWithPath: path))
+            if succeeded {
+                logger.info("Reminder action completed type=openPath result=success")
+            } else {
+                logger.error("Reminder action completed type=openPath result=failed")
+            }
         case .shortcut, .python, .deepSeekBalance:
             guard let command = processCommand(for: action) else { return }
             let process = Process()
@@ -70,8 +81,13 @@ enum ReminderActionExecutor {
             process.standardError = FileHandle.nullDevice
             do {
                 try process.run()
+                logger.info(
+                    "Reminder action started type=\(action.diagnosticLabel, privacy: .public) result=success"
+                )
             } catch {
-                logger.error("Reminder action failed: \(error.localizedDescription, privacy: .public)")
+                logger.error(
+                    "Reminder action started type=\(action.diagnosticLabel, privacy: .public) result=failed error=\(error.localizedDescription, privacy: .public)"
+                )
             }
         }
     }

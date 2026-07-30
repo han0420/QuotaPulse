@@ -22,6 +22,17 @@ enum ReminderClickAction: Equatable, Sendable {
     case shortcut(String)
     case python(scriptPath: String, workingDirectory: String)
     case deepSeekBalance
+
+    var diagnosticLabel: String {
+        switch self {
+        case .none: "none"
+        case .openURL: "openURL"
+        case .openPath: "openPath"
+        case .shortcut: "shortcut"
+        case .python: "python"
+        case .deepSeekBalance: "deepSeekBalance"
+        }
+    }
 }
 
 struct ReminderActionPayload: Equatable, Sendable {
@@ -217,6 +228,11 @@ struct DailyReminderConfiguration: Codable, Equatable, Identifiable, Sendable {
 
     var isValid: Bool { isValid(at: .now) }
 
+    func isCompleted(at now: Date = .now) -> Bool {
+        effectiveScheduleType == .once
+            && scheduledDate.map { $0 <= now } == true
+    }
+
     func isValid(at now: Date, calendar: Calendar = .current) -> Bool {
         guard isEnabled else { return true }
         return !normalizedMessage.isEmpty
@@ -267,6 +283,27 @@ struct DailyReminderConfiguration: Codable, Equatable, Identifiable, Sendable {
 
     var notificationIdentifier: String {
         "com.cmsjcm.QuotaPulse.daily-reminder.\(id.uuidString.lowercased())"
+    }
+}
+
+enum ReminderListPolicy {
+    static func prepending(
+        _ reminder: DailyReminderConfiguration,
+        to reminders: [DailyReminderConfiguration]
+    ) -> [DailyReminderConfiguration] {
+        [reminder] + reminders
+    }
+
+    static func preparingForDisplay(
+        _ reminders: [DailyReminderConfiguration],
+        at now: Date = .now
+    ) -> [DailyReminderConfiguration] {
+        reminders.map { reminder in
+            guard reminder.isEnabled, reminder.isCompleted(at: now) else { return reminder }
+            var completed = reminder
+            completed.isEnabled = false
+            return completed
+        }
     }
 }
 

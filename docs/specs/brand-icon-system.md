@@ -68,4 +68,4 @@
 
 ## 未决问题
 
-无。`swift test` 41 项通过，`./script/build_and_run.sh --verify` 通过，生成的 ICNS 可由系统 `iconutil` 反向解包。安全检查仍受仓库既有 `/Users/example/...` fixture 规则问题阻断。
+无。`swift test` 41 项通过，`./script/build_and_run.sh --verify` 通过，生成的 ICNS 可由系统 `iconutil` 反向解包。当时安全检查受仓库既有个人主目录格式 fixture 阻断，该 fixture 已于 2026-07-30 修正。

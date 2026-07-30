@@ -1,7 +1,7 @@
 # 凭据与隐私边界
 
 - Status: Implemented
-- Last updated: 2026-07-20
+- Last updated: 2026-07-30
 - Owners: project maintainers
 
 ## 背景与目标
@@ -27,6 +27,7 @@ QuotaPulse 复用本机 Codex/Claude 已认证状态获取额度，同时最小�
 - R10：新增网络服务、遥测、远程配置或凭据写入 MUST 先形成独立隐私/安全决策。
 - R11：经用户明确接受明文风险后，DeepSeek API Key MUST 保存于应用 `UserDefaults`，MUST NOT 写入日志或访问 Keychain；该例外不适用于 Codex/Claude 凭据。
 - R12：用户导出的配置备份 MUST 使用字段白名单，MUST NOT 包含 provider 凭据、DeepSeek API Key 或本机通知 API Bearer token。
+- R13：测试、fixture 与文档中的示例绝对路径 MUST 使用不含本机用户名的中性路径，使安全检查能够区分示例数据与潜在个人信息。
 
 ## 验收场景
 
@@ -37,6 +38,7 @@ QuotaPulse 复用本机 Codex/Claude 已认证状态获取额度，同时最小�
 - A5：Given Python 动作包含特殊字符，When 执行，Then 字符作为单一参数传递而非 shell 解释。
 - A6：Given 用户保存 DeepSeek API Key，When 应用重启并读取余额，Then 从应用偏好读取且不触发 Keychain 授权。
 - A7：Given 应用偏好中存在 API Key 与本机 token，When 导出配置，Then备份中不出现对应键或值。
+- A8：Given 动作测试需要绝对路径，When 运行仓库安全检查，Then 中性 fixture 不触发个人主目录规则且路径行为测试仍通过。
 
 ## 技术方案与实现映射
 
@@ -47,7 +49,8 @@ QuotaPulse 复用本机 Codex/Claude 已认证状态获取额度，同时最小�
 - Claude 刷新提前量和动作无 shell 构造已有单元测试。
 - 每次提交运行 `./script/security_check.sh`。
 - 发布前检查凭据权限、脱敏日志、Codex-only/Claude-only 和干净标准账户安装。
+- 验证（2026-07-30）：动作路径 fixture 改为中性绝对路径后，聚焦测试与完整 `swift test` 63 项通过；`./script/security_check.sh` 通过，共检查 84 个可发布文件。
 
 ## 未决问题
 
-当前安全脚本会把测试中的通用 `/Users/example/...` fixture 标为个人路径；应另行修正规则或 fixture，使默认检查可通过。
+无。

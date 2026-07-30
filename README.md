@@ -33,7 +33,7 @@ QuotaPulse is a native macOS menu bar and floating companion for Codex and Claud
 - Supports configurable quota alerts with either one fixed interval or two consumption stages.
 - Optionally queries and displays DeepSeek API account balances from a user-configured curl template, with immediate save/query feedback.
 - Provides a loopback-only HTTP notification API for local scripts and other programs. The endpoint and Bearer token are available in Settings.
-- Supports scheduled reminders whose click actions can open links or paths, run Shortcuts/Python, or execute the fixed DeepSeek balance request.
+- Supports scheduled reminders whose click actions can open links or paths, run Shortcuts/Python, or execute the fixed DeepSeek balance request; new reminders appear first, and completed one-time reminders remain available for reuse.
 
 ## Installation
 

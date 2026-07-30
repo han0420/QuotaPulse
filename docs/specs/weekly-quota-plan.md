@@ -69,7 +69,7 @@
 - 2026-07-24：先确认配置与周末算法测试因目标 API 缺失而 RED；实现后聚焦测试通过。
 - `swift test`：59 项通过。
 - `QUOTAPULSE_ALLOW_ADHOC=1 ./script/build_and_run.sh --verify`：通过。
-- `./script/security_check.sh`：失败；仍由仓库已有的 `/Users/example/...` 测试 fixture 与既有文档记录触发，与本功能无关，但按仓库完成定义仍是阻塞项。
+- `./script/security_check.sh`：当时失败；由仓库已有的个人主目录格式 fixture 与既有文档记录触发，该 fixture 已于 2026-07-30 修正。
 - 待人工检查：中英文设置页开关、保存反馈，以及保存后浮窗计划标记即时变化。
 
 ## 未决问题

@@ -29,7 +29,9 @@ struct SettingsView: View {
         self.notificationService = notificationService
         self.store = store
         self.localNotificationHTTPToken = localNotificationHTTPToken
-        _reminders = State(initialValue: DailyReminderPreferences.loadAll())
+        _reminders = State(initialValue: ReminderListPolicy.preparingForDisplay(
+            DailyReminderPreferences.loadAll()
+        ))
         _quotaNotificationConfiguration = State(initialValue: QuotaNotificationPreferences.load())
         _weeklyQuotaPlanConfiguration = State(initialValue: WeeklyQuotaPlanPreferences.load())
         _deepSeekConfiguration = State(initialValue: DeepSeekBalanceConfiguration.load())
@@ -431,14 +433,15 @@ struct SettingsView: View {
     }
 
     private func addReminder() {
-        reminders.append(DailyReminderConfiguration(
+        let reminder = DailyReminderConfiguration(
             isEnabled: true,
             hour: 9,
             minute: 0,
             message: language.text("settings.reminder.defaultMessage"),
             scheduleType: .daily,
             actionType: ReminderActionType.none
-        ))
+        )
+        reminders = ReminderListPolicy.prepending(reminder, to: reminders)
         reminderStatusKey = nil
     }
 
@@ -558,6 +561,14 @@ private struct DailyReminderEditor: View {
                 HStack {
                     Toggle(language.text("settings.reminder.enabled"), isOn: $reminder.isEnabled)
                     Spacer()
+                    if reminder.isCompleted() {
+                        Label(
+                            language.text("settings.reminder.status.completed"),
+                            systemImage: "checkmark.circle.fill"
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
                     Button(role: .destructive, action: onDelete) {
                         Label(language.text("settings.reminder.delete"), systemImage: "trash")
                             .labelStyle(.iconOnly)

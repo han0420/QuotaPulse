@@ -33,6 +33,19 @@ enum DailyReminderScheduleResult {
     case failed
 }
 
+enum ReminderNotificationIdentifierPolicy {
+    private static let managedPrefixes = [
+        "com.cmsjcm.QuotaPulse.daily-reminder.",
+        "com.cmsjcm.QuotaDot.daily-reminder."
+    ]
+
+    static func identifiersToRemove(from identifiers: [String]) -> [String] {
+        identifiers.filter { identifier in
+            managedPrefixes.contains { identifier.hasPrefix($0) }
+        }
+    }
+}
+
 enum ReminderSnoozePolicy {
     static let tenMinutesActionIdentifier = "QuotaPulse.snooze.10m"
     static let oneHourActionIdentifier = "QuotaPulse.snooze.1h"
@@ -162,9 +175,9 @@ final class QuotaNotificationService: NSObject, UNUserNotificationCenterDelegate
         }
 
         let pending = await center.pendingNotificationRequests()
-        let existingIdentifiers = pending
-            .map(\.identifier)
-            .filter { $0.hasPrefix(Self.dailyReminderIdentifierPrefix) }
+        let existingIdentifiers = ReminderNotificationIdentifierPolicy.identifiersToRemove(
+            from: pending.map(\.identifier)
+        )
         guard !scheduledConfigurations.isEmpty else {
             center.removePendingNotificationRequests(withIdentifiers: existingIdentifiers)
             return .disabled
@@ -241,15 +254,29 @@ final class QuotaNotificationService: NSObject, UNUserNotificationCenterDelegate
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
+        logger.info(
+            "Reminder response received actionIdentifier=\(response.actionIdentifier, privacy: .public) requestIdentifier=\(response.notification.request.identifier, privacy: .public)"
+        )
         if let delay = ReminderSnoozePolicy.delay(for: response.actionIdentifier) {
             let content = response.notification.request.content.mutableCopy() as? UNMutableNotificationContent
             completionHandler()
-            guard let content else { return }
+            guard let content else {
+                logger.error("Reminder snooze failed reason=content-copy")
+                return
+            }
             center.add(UNNotificationRequest(
                 identifier: "\(Self.dailyReminderIdentifierPrefix).snoozed.\(UUID().uuidString)",
                 content: content,
                 trigger: UNTimeIntervalNotificationTrigger(timeInterval: delay, repeats: false)
-            )) { _ in }
+            )) { [logger] error in
+                if let error {
+                    logger.error(
+                        "Reminder snooze scheduling result=failed error=\(error.localizedDescription, privacy: .public)"
+                    )
+                } else {
+                    logger.info("Reminder snooze scheduling result=success")
+                }
+            }
             return
         }
 
@@ -258,9 +285,13 @@ final class QuotaNotificationService: NSObject, UNUserNotificationCenterDelegate
         )
         let clickAction = payload?.clickAction
         guard let clickAction else {
+            logger.error("Reminder response ignored reason=missing-or-invalid-payload")
             completionHandler()
             return
         }
+        logger.info(
+            "Reminder response payload parsed type=\(clickAction.diagnosticLabel, privacy: .public)"
+        )
         let completion = NotificationResponseCompletion(completionHandler)
         Task { @MainActor in
             ReminderResponseCompletion.perform(

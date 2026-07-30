@@ -115,6 +115,7 @@
 "settings.reminder.status.empty" = "请输入通知内容";
 "settings.reminder.status.denied" = "通知权限未开启";
 "settings.reminder.status.failed" = "保存失败";
+"settings.reminder.status.completed" = "已完成";
 "settings.reminder.status.invalidURL" = "请输入有效的 HTTP 或 HTTPS 链接";
 "settings.reminder.status.invalidSchedule" = "请选择有效的未来时间或至少一个星期";
 "settings.reminder.status.invalidAction" = "请完整配置点击动作";

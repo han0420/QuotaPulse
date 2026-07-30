@@ -115,6 +115,7 @@
 "settings.reminder.status.empty" = "Enter a message";
 "settings.reminder.status.denied" = "Notifications not allowed";
 "settings.reminder.status.failed" = "Could not save";
+"settings.reminder.status.completed" = "Completed";
 "settings.reminder.status.invalidURL" = "Enter a valid HTTP or HTTPS link";
 "settings.reminder.status.invalidSchedule" = "Choose a future time or at least one weekday";
 "settings.reminder.status.invalidAction" = "Complete the click action configuration";

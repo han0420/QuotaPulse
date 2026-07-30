@@ -66,7 +66,7 @@
 
 - Assumption: “显示额度窗口”是恢复入口，因此每次调用都重置位置；日常 hover 展开和手动拖动不改变。
 - Test plan: 先为默认右上定位写入纯几何 XCTest 并确认 RED，再接入 AppKit 面板恢复流程；运行完整测试、安全检查和启动验证。
-- Verification (2026-07-21): `swift test` passed (54 tests). `QUOTAPULSE_ALLOW_ADHOC=1 ./script/build_and_run.sh --verify` passed. `./script/security_check.sh` remains blocked by pre-existing `/Users/example/...` placeholder-path findings in unrelated tests and specs.
+- Verification (2026-07-21): `swift test` passed (54 tests). `QUOTAPULSE_ALLOW_ADHOC=1 ./script/build_and_run.sh --verify` passed. The security check was then blocked by pre-existing personal-home-style fixture findings, corrected on 2026-07-30.
 - Assumption (2026-07-24): “计划额度”采用连续时间预算，并以与主环相同的“剩余百分比”显示在周额度圆环上。
 - Implementation (2026-07-24): `WeeklyQuotaBudget` 计算计划剩余比例；`ProviderCard` 只为周周期传入计划值；`QuotaRing` 在主值下方显示计划百分比，并以橙色环上标记表示计划位置；中英文资源同步。
-- Verification (2026-07-24): RED confirmed for missing `plannedRemaining`; focused tests and full `swift test` passed (57 tests). `QUOTAPULSE_ALLOW_ADHOC=1 ./script/build_and_run.sh --verify` passed. `./script/security_check.sh` remains blocked by the documented pre-existing `/Users/example/...` fixture findings. Manual visual comparison of actual and planned markers in both languages remains required.
+- Verification (2026-07-24): RED confirmed for missing `plannedRemaining`; focused tests and full `swift test` passed (57 tests). `QUOTAPULSE_ALLOW_ADHOC=1 ./script/build_and_run.sh --verify` passed. The security check was then blocked by the documented personal-home-style fixture findings, corrected on 2026-07-30. Manual visual comparison of actual and planned markers in both languages remains required.

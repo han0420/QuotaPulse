@@ -67,7 +67,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func restoreDailyReminders() async {
         let configurations = DailyReminderPreferences.loadAll()
-        guard !configurations.isEmpty else { return }
         _ = await notificationService.synchronizeReminders(
             configurations,
             title: language.text("notification.daily.title"),

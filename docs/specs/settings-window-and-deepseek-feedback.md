@@ -56,4 +56,4 @@ XCTest 覆盖模板参数和保存校验；运行完整 `swift test`。设置置
 
 ## 未决问题
 
-无。`swift test` 40 项通过，`./script/build_and_run.sh --verify` 通过；设置窗口置前仍需从菜单进行人工交互确认。安全检查受仓库既有 `/Users/example/...` fixture 规则问题阻断。
+无。`swift test` 40 项通过，`./script/build_and_run.sh --verify` 通过；设置窗口置前仍需从菜单进行人工交互确认。当时安全检查受仓库既有个人主目录格式 fixture 阻断，该 fixture 已于 2026-07-30 修正。

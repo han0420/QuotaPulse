@@ -166,6 +166,19 @@ final class QuotaModelsTests: XCTestCase {
         XCTAssertFalse(NotificationAuthorizationState.denied.shouldRequestAuthorization)
     }
 
+    func testReminderSynchronizationRemovesCurrentAndLegacyReminderIdentifiersOnly() {
+        let identifiers = [
+            "com.cmsjcm.QuotaPulse.daily-reminder.current.daily",
+            "com.cmsjcm.QuotaDot.daily-reminder.legacy.daily",
+            "unrelated.notification"
+        ]
+
+        XCTAssertEqual(
+            ReminderNotificationIdentifierPolicy.identifiersToRemove(from: identifiers),
+            Array(identifiers.prefix(2))
+        )
+    }
+
     func testDeepSeekBalanceDecodesOfficialResponse() throws {
         let data = #"{"is_available":true,"balance_infos":[{"currency":"CNY","total_balance":"110.00","granted_balance":"10.00","topped_up_balance":"100.00"}]}"#.data(using: .utf8)!
         let balance = try DeepSeekBalanceParser.parse(data: data)
@@ -559,6 +572,45 @@ final class QuotaModelsTests: XCTestCase {
         XCTAssertEqual(schedules[0].dateComponents.minute, calendar.component(.minute, from: fireDate))
     }
 
+    func testReminderListPrependsNewReminder() {
+        let existing = DailyReminderConfiguration(
+            id: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!,
+            isEnabled: true,
+            hour: 9,
+            minute: 0,
+            message: "已有提醒"
+        )
+        let newReminder = DailyReminderConfiguration(
+            id: UUID(uuidString: "22222222-2222-2222-2222-222222222222")!,
+            isEnabled: true,
+            hour: 10,
+            minute: 0,
+            message: "新提醒"
+        )
+
+        let result = ReminderListPolicy.prepending(newReminder, to: [existing])
+
+        XCTAssertEqual(result.map(\.id), [newReminder.id, existing.id])
+    }
+
+    func testReminderListKeepsAndDisablesCompletedOneTimeReminder() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let completed = DailyReminderConfiguration(
+            isEnabled: true,
+            hour: 9,
+            minute: 0,
+            message: "已完成提醒",
+            scheduleType: .once,
+            scheduledDate: now.addingTimeInterval(-60)
+        )
+
+        let result = ReminderListPolicy.preparingForDisplay([completed], at: now)
+
+        XCTAssertEqual(result.count, 1)
+        XCTAssertFalse(result[0].isEnabled)
+        XCTAssertTrue(result[0].isCompleted(at: now))
+    }
+
     func testWeeklyReminderBuildsOneRepeatingSchedulePerSelectedWeekday() {
         let reminder = DailyReminderConfiguration(
             isEnabled: true,
@@ -593,8 +645,8 @@ final class QuotaModelsTests: XCTestCase {
             minute: 0,
             message: "运行脚本",
             actionType: .python,
-            actionValue: "/Users/example/automation/report.py",
-            workingDirectory: "/Users/example/automation"
+            actionValue: "/tmp/quotapulse-test/automation/report.py",
+            workingDirectory: "/tmp/quotapulse-test/automation"
         )
         let unsafe = DailyReminderConfiguration(
             isEnabled: true,
@@ -603,14 +655,14 @@ final class QuotaModelsTests: XCTestCase {
             message: "运行脚本",
             actionType: .python,
             actionValue: "report.py",
-            workingDirectory: "/Users/example/automation"
+            workingDirectory: "/tmp/quotapulse-test/automation"
         )
 
         XCTAssertEqual(
             valid.clickAction,
             .python(
-                scriptPath: "/Users/example/automation/report.py",
-                workingDirectory: "/Users/example/automation"
+                scriptPath: "/tmp/quotapulse-test/automation/report.py",
+                workingDirectory: "/tmp/quotapulse-test/automation"
             )
         )
         XCTAssertTrue(valid.isValid)
@@ -625,14 +677,34 @@ final class QuotaModelsTests: XCTestCase {
             .openPath("/Applications/Notes.app"),
             .shortcut("开始专注"),
             .python(
-                scriptPath: "/Users/example/automation/report.py",
-                workingDirectory: "/Users/example/automation"
+                scriptPath: "/tmp/quotapulse-test/automation/report.py",
+                workingDirectory: "/tmp/quotapulse-test/automation"
             )
         ]
 
         for action in actions {
             let payload = ReminderActionPayload(action: action)
             XCTAssertEqual(payload.clickAction, action)
+        }
+    }
+
+    func testReminderActionDiagnosticLabelsDoNotExposeTargetValues() {
+        let sensitiveTargets = [
+            ReminderClickAction.openURL(URL(string: "https://private.example/secret")!),
+            .openPath("/tmp/secret.txt"),
+            .shortcut("Private Shortcut"),
+            .python(scriptPath: "/tmp/secret.py", workingDirectory: "/tmp")
+        ]
+
+        XCTAssertEqual(
+            sensitiveTargets.map(\.diagnosticLabel),
+            ["openURL", "openPath", "shortcut", "python"]
+        )
+        for (action, target) in zip(
+            sensitiveTargets,
+            ["private.example", "secret.txt", "Private Shortcut", "secret.py"]
+        ) {
+            XCTAssertFalse(action.diagnosticLabel.contains(target))
         }
     }
 
@@ -671,14 +743,14 @@ final class QuotaModelsTests: XCTestCase {
     func testPythonActionBuildsDirectProcessWithoutShell() throws {
         let command = try XCTUnwrap(ReminderActionExecutor.processCommand(
             for: .python(
-                scriptPath: "/Users/example/automation/report.py",
-                workingDirectory: "/Users/example/automation"
+                scriptPath: "/tmp/quotapulse-test/automation/report.py",
+                workingDirectory: "/tmp/quotapulse-test/automation"
             )
         ))
 
         XCTAssertEqual(command.executableURL.path, "/usr/bin/env")
-        XCTAssertEqual(command.arguments, ["python3", "/Users/example/automation/report.py"])
-        XCTAssertEqual(command.currentDirectoryURL?.path, "/Users/example/automation")
+        XCTAssertEqual(command.arguments, ["python3", "/tmp/quotapulse-test/automation/report.py"])
+        XCTAssertEqual(command.currentDirectoryURL?.path, "/tmp/quotapulse-test/automation")
         XCTAssertTrue(command.environment["PATH", default: ""].contains("/opt/homebrew/bin"))
     }
 
