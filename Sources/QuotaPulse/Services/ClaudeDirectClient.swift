@@ -8,7 +8,7 @@ actor ClaudeDirectClient {
     private let tokenURL = URL(string: "https://platform.claude.com/v1/oauth/token")!
     private let clientID = "9d1c250a-e61b-44d9-88ed-5944d1962f5e"
     private let maximumPayloadSize = 1_048_576
-    private let logger = Logger(subsystem: "com.cmsjcm.QuotaPulse", category: "claude-auth")
+    private let logger = Logger(subsystem: "com.cmsjcm.QuotaPulse.v2", category: "claude-auth")
     private var cachedCredential: LoadedCredential?
 
     func fetch() async throws -> ProviderUsage {

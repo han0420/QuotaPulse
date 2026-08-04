@@ -64,7 +64,7 @@
 - 验证（2026-07-24）：列表策略 RED 已确认，聚焦测试转绿；完整 `swift test` 61 项通过；`QUOTAPULSE_ALLOW_ADHOC=1 ./script/build_and_run.sh --verify` 通过。当时安全检查被仓库已有的个人主目录格式 fixture 阻断，该 fixture 已于 2026-07-30 修正。
 - 验证（2026-07-30）：点击诊断标签隐私测试的 RED 已确认，聚焦测试与完整 `swift test` 63 项通过；`QUOTAPULSE_ALLOW_ADHOC=1 ./script/build_and_run.sh --verify` 通过。诊断改动未新增安全告警。
 - 验证（2026-08-03）：跨天 payload 缺失回查与历史已投递通知清理测试的 RED 已确认，聚焦测试转绿；完整 `swift test` 66 项、`./script/security_check.sh` 与 `QUOTAPULSE_ALLOW_ADHOC=1 ./script/build_and_run.sh --verify` 全部通过。
-- 验证（2026-08-04）：系统日志确认隔日通知点击在进入应用前因旧 ad-hoc 身份无法匹配而失败；当前两个不同构建号应用包的 designated requirement 集成测试均为 `designated => identifier "com.cmsjcm.QuotaPulse"`，不再随 cdhash 变化。完整 `swift test` 66 项、`./script/security_check.sh`、`QUOTAPULSE_ALLOW_ADHOC=1 ./script/build_and_run.sh --verify`、安装包严格签名验证与 `/Applications/QuotaPulse.app` 启动均通过。
+- 验证（2026-08-04）：系统日志确认历史 ad-hoc 来源仍各自保有 repeating request，当前来源的公开清理 API 无法跨来源删除。纯新版因此断代为 `com.cmsjcm.QuotaPulse.v2`，旧 bundle 的系统通知权限已关闭；新版通知容器与所有历史来源完全隔离。
 - 手动检查：设置页已有多条提醒时新增一条，确认无需滚动且新卡片位于顶部；分别在中英文下确认过期一次性提醒显示完成状态、保持关闭，并可修改未来时间后重新启用。
 - 手动检查通知权限拒绝、一次性触发、每周触发、点击动作及稍后提醒。
 - 手动检查跨天恢复：保持新版运行并经历睡眠唤醒和至少一次隔日重复投递，确认即使系统响应 payload 缺失，通知点击动作仍能执行。

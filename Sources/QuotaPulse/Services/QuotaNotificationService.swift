@@ -82,7 +82,7 @@ final class QuotaNotificationService: NSObject, UNUserNotificationCenterDelegate
     private static let dailyReminderIdentifierPrefix = DailyReminderConfiguration.notificationIdentifierPrefix
     private static let reminderCategoryIdentifier = "QuotaPulse.v2.reminder.actions"
     private let center: UNUserNotificationCenter
-    private let logger = Logger(subsystem: "com.cmsjcm.QuotaPulse", category: "notification")
+    private let logger = Logger(subsystem: "com.cmsjcm.QuotaPulse.v2", category: "notification")
 
     override init() {
         center = .current()

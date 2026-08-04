@@ -1,7 +1,7 @@
 # QuotaPulse 品牌身份
 
 - Status: Implemented
-- Last updated: 2026-07-19
+- Last updated: 2026-08-04
 - Owners: project maintainers
 
 ## 背景与目标
@@ -20,7 +20,7 @@
 - R3：英文副标题 MUST 为 `A private, native quota, activity, and alert companion for Codex and Claude on macOS.`。
 - R4：中文定位 MUST 为“Codex 与 Claude 的本地额度、活动状态与提醒伴侣”。
 - R5：菜单、通知、登录启动说明、安装文档、发布文档、隐私和贡献文档中的用户可见旧名称 MUST 更新为 `QuotaPulse`。
-- R6：bundle identifier、OSLog subsystem、通知 identifier、通知 action identifier 和所有偏好 key MUST 统一使用 `QuotaPulse` 命名空间。
+- R6：bundle identifier 与 OSLog subsystem MUST 使用 `com.cmsjcm.QuotaPulse.v2`；通知 identifier、通知 action identifier 和所有偏好 key MUST 使用当前 v2 命名空间。
 - R7：构建脚本 MUST 产出 `QuotaPulse.app`，且资源 bundle 能被运行时正确定位。
 - R8：源码目录、测试目录、应用入口文件和文档路径 MUST 统一使用 `QuotaPulse`。
 - R9：受版本控制的源码、测试、脚本和文档中 MUST 不再出现任何旧品牌名称。
@@ -29,7 +29,7 @@
 
 - A1：Given 当前源码，When 执行 `swift test`，Then `QuotaPulse` target 编译且全部现有测试通过。
 - A2：Given 本机构建，When 组装应用，Then 生成 `QuotaPulse.app/Contents/MacOS/QuotaPulse` 并通过签名验证。
-- A3：Given 安装 QuotaPulse，When macOS 读取应用身份，Then bundle ID 为 `com.cmsjcm.QuotaPulse`。
+- A3：Given 安装 QuotaPulse，When macOS 读取应用身份，Then bundle ID 为 `com.cmsjcm.QuotaPulse.v2`。
 - A4：Given 用户查看 README 或应用文案，When 读取产品定位，Then 看到新名称和更新后的额度/活动/提醒副标题。
 
 ## 技术方案

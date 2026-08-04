@@ -36,6 +36,8 @@
 - R8：配置备份格式 MUST 升为 v2，MUST 拒绝所有其他版本且不部分写入。
 - R9：受版本控制的生产源码与测试 MUST NOT 包含旧品牌名称或旧数据迁移分支。
 - R10：ad-hoc 本机签名 MUST 继续使用稳定 designated requirement，避免 v2 通知在后续重编译时失去路由身份。
+- R11：纯新版应用 MUST 使用 `com.cmsjcm.QuotaPulse.v2` bundle identifier，与所有历史签名来源的通知容器完全隔离。
+- R12：安装切换 MUST 停止旧身份应用，并关闭旧 `com.cmsjcm.QuotaPulse` 的系统通知展示；新版 MUST 独立申请通知授权。
 
 ## 合法性与边界
 
@@ -53,10 +55,11 @@
 - A5：Given 一份非 v2 备份，When 导入，Then 返回不支持版本且当前偏好不变。
 - A6：Given fresh-start 刚完成，When 应用启动通知服务，Then 当前身份可见的 pending/delivered 通知全部清除并且没有旧配置被重建。
 - A7：Given 两个不同内容的本机 ad-hoc 构建，When 检查 designated requirement，Then 两者使用同一稳定 identifier requirement。
+- A8：Given 系统通知数据库仍有旧 bundle 的重复请求，When 安装并授权 v2 bundle，Then 新应用只接收 v2 容器通知，旧 bundle 请求不再展示。
 
 ## 技术方案
 
-`FreshStartPolicy` 在 `AppDelegate` 的任何配置依赖初始化之前清空偏好域并写入 v2 marker。需要偏好的 AppDelegate 属性延迟初始化。`QuotaNotificationService` 在该次启动清空所有可见通知，随后只同步 v2 request。所有偏好存储和备份服务共享 v2 namespace 约定，不提供任何转换器。
+`FreshStartPolicy` 在 `AppDelegate` 的任何配置依赖初始化之前清空偏好域并写入 v2 marker。需要偏好的 AppDelegate 属性延迟初始化。`QuotaNotificationService` 在该次启动清空所有可见通知，随后只同步 v2 request。所有偏好存储和备份服务共享 v2 namespace 约定，不提供任何转换器。应用 bundle identity 断代为 `com.cmsjcm.QuotaPulse.v2`；旧 identity 的系统通知权限在安装切换时关闭。
 
 ## 测试计划
 
@@ -76,16 +79,19 @@
 - `DailyReminderConfiguration` / `DailyReminderPreferences`：严格校验当前提醒结构，拒绝缺少条件必填字段的读取与写入。
 - `QuotaNotificationService`：只生成和识别 v2 notification/category/action/payload identifier。
 - `AppConfigurationBackup`：只导出和接受版本 2，非 v2 导入保持原子拒绝。
-- `script/assemble_app.sh`：ad-hoc 构建固定 designated requirement 为 `identifier "com.cmsjcm.QuotaPulse"`。
+- `script/assemble_app.sh`：ad-hoc 构建固定 designated requirement 为 `identifier "com.cmsjcm.QuotaPulse.v2"`。
+- `AppBrand`、构建/运行脚本与 OSLog subsystem：统一使用 `com.cmsjcm.QuotaPulse.v2`，禁止复用历史通知容器。
+- macOS 通知设置：旧 `com.cmsjcm.QuotaPulse` 身份关闭，新 `.v2` 身份独立授权。
 
 ## 验证记录
 
 - `swift test`：68 tests passed。
 - `./script/security_check.sh`：passed。
 - `./script/build_and_run.sh --verify`（允许本机 ad-hoc）：构建、签名与启动验证通过。
-- 两个不同 build number 的 ad-hoc bundle：designated requirement 完全一致。
+- 两个不同 build number 的 `.v2` ad-hoc bundle：designated requirement 均为 `identifier "com.cmsjcm.QuotaPulse.v2"`。
 - 生产源码与测试：旧品牌名、旧提醒字段和旧提醒单项 key 零匹配。
 - 本机安装后偏好域：只包含 `QuotaPulse.v2.freshStart.completed` 与新生成的 `QuotaPulse.v2.localNotificationHTTP.token`。
+- 本机安装后 bundle identity：`com.cmsjcm.QuotaPulse.v2`；新版授权成功且 pending notification 数量为 0，旧身份通知已关闭。
 
 ## 未决问题
 

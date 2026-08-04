@@ -265,7 +265,7 @@ final class QuotaModelsTests: XCTestCase {
 
     func testBrandIdentityUsesQuotaPulsePositioning() {
         XCTAssertEqual(AppBrand.name, "QuotaPulse")
-        XCTAssertEqual(AppBrand.bundleIdentifier, "com.cmsjcm.QuotaPulse")
+        XCTAssertEqual(AppBrand.bundleIdentifier, "com.cmsjcm.QuotaPulse.v2")
         XCTAssertEqual(AppBrand.preferenceNamespace, "QuotaPulse.v2")
         XCTAssertEqual(
             AppBrand.englishSubtitle,

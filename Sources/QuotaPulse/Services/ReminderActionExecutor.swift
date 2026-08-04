@@ -11,7 +11,7 @@ struct ReminderProcessCommand: Equatable, Sendable {
 
 enum ReminderActionExecutor {
     private static let logger = Logger(
-        subsystem: "com.cmsjcm.QuotaPulse",
+        subsystem: "com.cmsjcm.QuotaPulse.v2",
         category: "reminder-action"
     )
 
