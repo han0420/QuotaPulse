@@ -2,7 +2,7 @@ import Foundation
 
 struct DeepSeekBalanceConfiguration: Codable, Equatable, Sendable {
     static let defaultCurlTemplate = "curl -L -X GET 'https://api.deepseek.com/user/balance' -H 'Accept: application/json' -H 'Authorization: Bearer <API_KEY>'"
-    private static let storageKey = "QuotaPulse.deepSeekBalance.configuration"
+    private static let storageKey = "QuotaPulse.v2.deepSeekBalance.configuration"
 
     var isEnabled: Bool
     var curlTemplate: String

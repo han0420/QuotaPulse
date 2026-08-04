@@ -16,7 +16,7 @@ enum AppLanguage: String, Codable, CaseIterable, Identifiable, Sendable {
 
 @MainActor @Observable
 final class LanguageSettings {
-    static let storageKey = "QuotaPulse.appLanguage"
+    static let storageKey = "QuotaPulse.v2.appLanguage"
 
     var language: AppLanguage {
         didSet { UserDefaults.standard.set(language.rawValue, forKey: Self.storageKey) }

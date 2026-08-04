@@ -50,7 +50,8 @@ DeepSeek API Key + curl 模板 ─▶ DeepSeekBalanceClient ─▶ QuotaStore �
 
 ## 持久化与安全边界
 
-- 用户偏好使用 `UserDefaults`；需要迁移时提供向后兼容默认值和测试。
+- 当前应用身份为 `com.cmsjcm.QuotaPulse.v2`；它与历史 `com.cmsjcm.QuotaPulse` 通知容器完全隔离，禁止重新复用旧 bundle identity。
+- 用户偏好使用 `UserDefaults` 的 `QuotaPulse.v2.*` namespace；只解码当前 schema，旧 schema 直接拒绝，不自动迁移。
 - 经用户明确接受风险后，DeepSeek API Key 以明文保存在应用偏好中；不得写入日志。Codex/Claude 凭据不适用此例外。
 - 不把 token、用户名、凭据文件、精确位置或完整本机路径写入日志、fixture、文档或提交。
 - 配置备份只包含语言、提醒和非敏感功能设置，明确排除 provider 凭据、DeepSeek API Key 与本机通知 API token。

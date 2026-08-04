@@ -25,6 +25,27 @@ final class QuotaModelsTests: XCTestCase {
         )
     }
 
+    func testFreshStartClearsExistingPreferencesOnceAndPreservesV2PreferencesAfterward() throws {
+        let suiteName = "QuotaPulseTests.fresh-start-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defaults.set("retired", forKey: "retired.preference")
+        defaults.set("secret", forKey: "retired.secret")
+
+        XCTAssertTrue(FreshStartPolicy.prepare(defaults: defaults))
+        XCTAssertNil(defaults.object(forKey: "retired.preference"))
+        XCTAssertNil(defaults.object(forKey: "retired.secret"))
+        XCTAssertTrue(defaults.bool(forKey: FreshStartPolicy.completionKey))
+
+        defaults.set("en", forKey: "QuotaPulse.v2.appLanguage")
+        XCTAssertFalse(FreshStartPolicy.prepare(defaults: defaults))
+        XCTAssertEqual(defaults.string(forKey: "QuotaPulse.v2.appLanguage"), "en")
+    }
+
+    func testConfigurationBackupUsesOnlyVersionTwo() {
+        XCTAssertEqual(AppConfigurationBackup.currentVersion, 2)
+    }
+
     func testConfigurationBackupRoundTripsOnlyNonSensitivePreferences() throws {
         let sourceName = "ConfigurationBackupSource-\(UUID().uuidString)"
         let destinationName = "ConfigurationBackupDestination-\(UUID().uuidString)"
@@ -35,7 +56,7 @@ final class QuotaModelsTests: XCTestCase {
             destination.removePersistentDomain(forName: destinationName)
         }
 
-        source.set(AppLanguage.simplifiedChinese.rawValue, forKey: "QuotaPulse.appLanguage")
+        source.set(AppLanguage.simplifiedChinese.rawValue, forKey: "QuotaPulse.v2.appLanguage")
         let quota = QuotaNotificationConfiguration.twoStage(
             breakpointPercent: 60,
             firstIntervalPercent: 10,
@@ -55,7 +76,7 @@ final class QuotaModelsTests: XCTestCase {
         )
         DailyReminderPreferences.saveAll([reminder], to: source)
         DeepSeekAPIKeyStore.save("secret-api-key", to: source)
-        source.set("secret-local-token", forKey: "QuotaPulse.localNotificationHTTP.token")
+        source.set("secret-local-token", forKey: "QuotaPulse.v2.localNotificationHTTP.token")
 
         let data = try AppConfigurationBackupService.exportData(from: source)
         let json = try XCTUnwrap(String(data: data, encoding: .utf8))
@@ -65,7 +86,7 @@ final class QuotaModelsTests: XCTestCase {
         let imported = try AppConfigurationBackupService.importData(data, to: destination)
 
         XCTAssertEqual(imported.language, .simplifiedChinese)
-        XCTAssertEqual(destination.string(forKey: "QuotaPulse.appLanguage"), AppLanguage.simplifiedChinese.rawValue)
+        XCTAssertEqual(destination.string(forKey: "QuotaPulse.v2.appLanguage"), AppLanguage.simplifiedChinese.rawValue)
         XCTAssertEqual(QuotaNotificationPreferences.load(from: destination), quota)
         XCTAssertEqual(
             DeepSeekBalanceConfiguration.load(from: destination).curlTemplate,
@@ -73,42 +94,42 @@ final class QuotaModelsTests: XCTestCase {
         )
         XCTAssertEqual(DailyReminderPreferences.loadAll(from: destination), [reminder])
         XCTAssertNil(DeepSeekAPIKeyStore.load(from: destination))
-        XCTAssertNil(destination.string(forKey: "QuotaPulse.localNotificationHTTP.token"))
+        XCTAssertNil(destination.string(forKey: "QuotaPulse.v2.localNotificationHTTP.token"))
     }
 
     func testConfigurationBackupRejectsUnsupportedVersionWithoutChangingPreferences() throws {
         let suiteName = "ConfigurationBackupInvalid-\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
         defer { defaults.removePersistentDomain(forName: suiteName) }
-        defaults.set(AppLanguage.english.rawValue, forKey: "QuotaPulse.appLanguage")
+        defaults.set(AppLanguage.english.rawValue, forKey: "QuotaPulse.v2.appLanguage")
 
         let data = #"{"version":99,"language":"zh-Hans","quotaNotification":{"mode":"singleStage","breakpointPercent":50,"firstIntervalPercent":10,"secondIntervalPercent":10},"deepSeek":{"isEnabled":false,"curlTemplate":"curl safe"},"dailyReminders":[]}"#.data(using: .utf8)!
 
         XCTAssertThrowsError(try AppConfigurationBackupService.importData(data, to: defaults))
-        XCTAssertEqual(defaults.string(forKey: "QuotaPulse.appLanguage"), AppLanguage.english.rawValue)
+        XCTAssertEqual(defaults.string(forKey: "QuotaPulse.v2.appLanguage"), AppLanguage.english.rawValue)
         XCTAssertThrowsError(
             try AppConfigurationBackupService.importData(Data("not-json".utf8), to: defaults)
         )
-        XCTAssertEqual(defaults.string(forKey: "QuotaPulse.appLanguage"), AppLanguage.english.rawValue)
+        XCTAssertEqual(defaults.string(forKey: "QuotaPulse.v2.appLanguage"), AppLanguage.english.rawValue)
     }
 
     func testConfigurationBackupRejectsInvalidQuotaConfigurationAtomically() throws {
         let suiteName = "ConfigurationBackupInvalidQuota-\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
         defer { defaults.removePersistentDomain(forName: suiteName) }
-        defaults.set(AppLanguage.english.rawValue, forKey: "QuotaPulse.appLanguage")
+        defaults.set(AppLanguage.english.rawValue, forKey: "QuotaPulse.v2.appLanguage")
 
-        let data = #"{"version":1,"language":"zh-Hans","quotaNotification":{"mode":"singleStage","breakpointPercent":50,"firstIntervalPercent":0,"secondIntervalPercent":0},"deepSeek":{"isEnabled":false,"curlTemplate":"curl safe"},"dailyReminders":[]}"#.data(using: .utf8)!
+        let data = #"{"version":2,"language":"zh-Hans","quotaNotification":{"mode":"singleStage","breakpointPercent":50,"firstIntervalPercent":0,"secondIntervalPercent":0},"deepSeek":{"isEnabled":false,"curlTemplate":"curl safe"},"dailyReminders":[]}"#.data(using: .utf8)!
 
         XCTAssertThrowsError(try AppConfigurationBackupService.importData(data, to: defaults))
-        XCTAssertEqual(defaults.string(forKey: "QuotaPulse.appLanguage"), AppLanguage.english.rawValue)
+        XCTAssertEqual(defaults.string(forKey: "QuotaPulse.v2.appLanguage"), AppLanguage.english.rawValue)
     }
 
     func testConfigurationBackupRejectsStructurallyInvalidReminderAtomically() throws {
         let suiteName = "ConfigurationBackupInvalidReminder-\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
         defer { defaults.removePersistentDomain(forName: suiteName) }
-        defaults.set(AppLanguage.english.rawValue, forKey: "QuotaPulse.appLanguage")
+        defaults.set(AppLanguage.english.rawValue, forKey: "QuotaPulse.v2.appLanguage")
 
         let reminder = DailyReminderConfiguration(
             isEnabled: true,
@@ -128,7 +149,7 @@ final class QuotaModelsTests: XCTestCase {
         let data = try JSONEncoder().encode(backup)
 
         XCTAssertThrowsError(try AppConfigurationBackupService.importData(data, to: defaults))
-        XCTAssertEqual(defaults.string(forKey: "QuotaPulse.appLanguage"), AppLanguage.english.rawValue)
+        XCTAssertEqual(defaults.string(forKey: "QuotaPulse.v2.appLanguage"), AppLanguage.english.rawValue)
     }
 
     func testLocalNotificationHTTPAPIParsesAuthorizedNotificationRequest() throws {
@@ -166,16 +187,16 @@ final class QuotaModelsTests: XCTestCase {
         XCTAssertFalse(NotificationAuthorizationState.denied.shouldRequestAuthorization)
     }
 
-    func testReminderSynchronizationRemovesCurrentAndLegacyReminderIdentifiersOnly() {
+    func testReminderSynchronizationRemovesOnlyCurrentV2ReminderIdentifiers() {
         let identifiers = [
-            "com.cmsjcm.QuotaPulse.daily-reminder.current.daily",
-            "com.cmsjcm.QuotaDot.daily-reminder.legacy.daily",
+            "com.cmsjcm.QuotaPulse.v2.daily-reminder.current.daily",
+            "com.cmsjcm.QuotaPulse.daily-reminder.retired.daily",
             "unrelated.notification"
         ]
 
         XCTAssertEqual(
             ReminderNotificationIdentifierPolicy.identifiersToRemove(from: identifiers),
-            Array(identifiers.prefix(2))
+            [identifiers[0]]
         )
     }
 
@@ -244,8 +265,8 @@ final class QuotaModelsTests: XCTestCase {
 
     func testBrandIdentityUsesQuotaPulsePositioning() {
         XCTAssertEqual(AppBrand.name, "QuotaPulse")
-        XCTAssertEqual(AppBrand.bundleIdentifier, "com.cmsjcm.QuotaPulse")
-        XCTAssertEqual(AppBrand.preferenceNamespace, "QuotaPulse")
+        XCTAssertEqual(AppBrand.bundleIdentifier, "com.cmsjcm.QuotaPulse.v2")
+        XCTAssertEqual(AppBrand.preferenceNamespace, "QuotaPulse.v2")
         XCTAssertEqual(
             AppBrand.englishSubtitle,
             "A private, native quota, activity, and alert companion for Codex and Claude on macOS."
@@ -324,7 +345,7 @@ final class QuotaModelsTests: XCTestCase {
 
         defaults.set(
             Data("invalid".utf8),
-            forKey: "QuotaPulse.weeklyQuotaPlan.configuration"
+            forKey: "QuotaPulse.v2.weeklyQuotaPlan.configuration"
         )
         XCTAssertFalse(WeeklyQuotaPlanPreferences.load(from: defaults).excludesWeekends)
     }
@@ -500,22 +521,23 @@ final class QuotaModelsTests: XCTestCase {
         XCTAssertEqual(DailyReminderPreferences.loadAll(from: defaults), reminders)
     }
 
-    func testDailyReminderPreferencesMigratesLegacyReminder() {
-        let suiteName = "QuotaPulseTests.legacy-reminder"
+    func testDailyReminderPreferencesIgnoreRetiredStorageKeys() throws {
+        let suiteName = "QuotaPulseTests.retired-reminder-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
         defer { defaults.removePersistentDomain(forName: suiteName) }
-        defaults.set(true, forKey: "QuotaPulse.dailyReminder.enabled")
-        defaults.set(8, forKey: "QuotaPulse.dailyReminder.hour")
-        defaults.set(45, forKey: "QuotaPulse.dailyReminder.minute")
-        defaults.set("旧提醒", forKey: "QuotaPulse.dailyReminder.message")
+        let retiredReminder = DailyReminderConfiguration(
+            isEnabled: true,
+            hour: 8,
+            minute: 45,
+            message: "Retired"
+        )
+        defaults.set(
+            try JSONEncoder().encode([retiredReminder]),
+            forKey: "retired.dailyReminders"
+        )
 
-        let migrated = DailyReminderPreferences.loadAll(from: defaults)
-
-        XCTAssertEqual(migrated.count, 1)
-        XCTAssertEqual(migrated[0].hour, 8)
-        XCTAssertEqual(migrated[0].minute, 45)
-        XCTAssertEqual(migrated[0].message, "旧提醒")
+        XCTAssertEqual(DailyReminderPreferences.loadAll(from: defaults), [])
     }
 
     func testDailyReminderAcceptsOnlyHTTPWebLinks() {
@@ -524,14 +546,16 @@ final class QuotaModelsTests: XCTestCase {
             hour: 10,
             minute: 0,
             message: "打开日报",
-            urlString: "  https://example.com/daily  "
+            actionType: .url,
+            actionValue: "  https://example.com/daily  "
         )
         let unsafeReminder = DailyReminderConfiguration(
             isEnabled: true,
             hour: 10,
             minute: 0,
             message: "不要执行脚本",
-            urlString: "javascript:alert(1)"
+            actionType: .url,
+            actionValue: "javascript:alert(1)"
         )
 
         XCTAssertEqual(webReminder.destinationURL?.absoluteString, "https://example.com/daily")
@@ -540,13 +564,66 @@ final class QuotaModelsTests: XCTestCase {
         XCTAssertFalse(unsafeReminder.isValid)
     }
 
-    func testDailyReminderDecodesSavedDataWithoutURL() throws {
-        let json = #"[{"id":"11111111-1111-1111-1111-111111111111","isEnabled":true,"hour":9,"minute":0,"message":"旧数据"}]"#.data(using: .utf8)!
+    func testDailyReminderRejectsDataMissingCurrentScheduleAndActionFields() {
+        let json = #"[{"id":"11111111-1111-1111-1111-111111111111","isEnabled":true,"hour":9,"minute":0,"message":"Incomplete"}]"#.data(using: .utf8)!
 
-        let reminders = try JSONDecoder().decode([DailyReminderConfiguration].self, from: json)
+        XCTAssertThrowsError(
+            try JSONDecoder().decode([DailyReminderConfiguration].self, from: json)
+        )
+    }
 
-        XCTAssertNil(reminders[0].urlString)
-        XCTAssertTrue(reminders[0].isValid)
+    func testDailyReminderPreferencesRejectConditionallyIncompleteCurrentData() {
+        let suiteName = "QuotaPulseTests.incomplete-current-reminders-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let incompleteReminders = [
+            DailyReminderConfiguration(
+                isEnabled: true, hour: 9, minute: 0, message: "Once", scheduleType: .once
+            ),
+            DailyReminderConfiguration(
+                isEnabled: true, hour: 9, minute: 0, message: "Weekly", scheduleType: .weekly
+            ),
+            DailyReminderConfiguration(
+                isEnabled: true, hour: 9, minute: 0, message: "URL", actionType: .url
+            ),
+            DailyReminderConfiguration(
+                isEnabled: true,
+                hour: 9,
+                minute: 0,
+                message: "Python",
+                actionType: .python,
+                actionValue: "/tmp/task.py"
+            )
+        ]
+
+        for reminder in incompleteReminders {
+            DailyReminderPreferences.saveAll([reminder], to: defaults)
+            XCTAssertEqual(DailyReminderPreferences.loadAll(from: defaults), [])
+        }
+    }
+
+    func testDailyReminderPreferencesDoNotOverwriteValidDataWithIncompleteDisabledReminder() {
+        let suiteName = "QuotaPulseTests.reject-incomplete-save-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let valid = DailyReminderConfiguration(
+            isEnabled: true, hour: 9, minute: 0, message: "Valid"
+        )
+        let incompleteDisabled = DailyReminderConfiguration(
+            isEnabled: false,
+            hour: 10,
+            minute: 0,
+            message: "Incomplete",
+            actionType: .url
+        )
+
+        DailyReminderPreferences.saveAll([valid], to: defaults)
+        DailyReminderPreferences.saveAll([valid, incompleteDisabled], to: defaults)
+
+        XCTAssertEqual(DailyReminderPreferences.loadAll(from: defaults), [valid])
     }
 
     func testOneTimeReminderBuildsOneNonRepeatingSchedule() {
@@ -628,16 +705,6 @@ final class QuotaModelsTests: XCTestCase {
         XCTAssertTrue(schedules.allSatisfy(\.repeats))
     }
 
-    func testLegacyURLReminderDefaultsToDailyOpenURLAction() throws {
-        let json = #"{"id":"11111111-1111-1111-1111-111111111111","isEnabled":true,"hour":9,"minute":0,"message":"旧数据","urlString":"https://example.com"}"#.data(using: .utf8)!
-
-        let reminder = try JSONDecoder().decode(DailyReminderConfiguration.self, from: json)
-
-        XCTAssertEqual(reminder.effectiveScheduleType, .daily)
-        XCTAssertEqual(reminder.effectiveActionType, .url)
-        XCTAssertEqual(reminder.effectiveActionValue, "https://example.com")
-    }
-
     func testPythonClickActionRequiresAbsoluteScriptAndWorkingDirectory() {
         let valid = DailyReminderConfiguration(
             isEnabled: true,
@@ -709,8 +776,8 @@ final class QuotaModelsTests: XCTestCase {
     }
 
     func testReminderSnoozeActionsMapToExpectedDelays() {
-        XCTAssertEqual(ReminderSnoozePolicy.delay(for: "QuotaPulse.snooze.10m"), 10 * 60)
-        XCTAssertEqual(ReminderSnoozePolicy.delay(for: "QuotaPulse.snooze.1h"), 60 * 60)
+        XCTAssertEqual(ReminderSnoozePolicy.delay(for: "QuotaPulse.v2.snooze.10m"), 10 * 60)
+        XCTAssertEqual(ReminderSnoozePolicy.delay(for: "QuotaPulse.v2.snooze.1h"), 60 * 60)
         XCTAssertNil(ReminderSnoozePolicy.delay(for: "unknown"))
     }
 
@@ -728,6 +795,54 @@ final class QuotaModelsTests: XCTestCase {
         )
 
         XCTAssertEqual(events, ["action", "completion"])
+    }
+
+    func testReminderResponseRecoversActionFromCurrentConfigurationWhenPayloadIsMissing() throws {
+        let id = try XCTUnwrap(UUID(uuidString: "11111111-1111-1111-1111-111111111111"))
+        let reminder = DailyReminderConfiguration(
+            id: id,
+            isEnabled: true,
+            hour: 9,
+            minute: 0,
+            message: "Open dashboard",
+            actionType: .url,
+            actionValue: "https://example.com/dashboard"
+        )
+
+        let action = ReminderResponseActionResolver.resolve(
+            userInfo: [:],
+            requestIdentifier: "\(reminder.notificationIdentifier).daily",
+            configurations: [reminder]
+        )
+
+        XCTAssertEqual(
+            action,
+            .openURL(try XCTUnwrap(URL(string: "https://example.com/dashboard")))
+        )
+    }
+
+    func testReminderResponseDoesNotRecoverActionForRetiredOrUnknownIdentifier() {
+        let reminder = DailyReminderConfiguration(
+            isEnabled: true,
+            hour: 9,
+            minute: 0,
+            message: "Open dashboard",
+            actionType: .url,
+            actionValue: "https://example.com/dashboard"
+        )
+
+        XCTAssertNil(ReminderResponseActionResolver.resolve(
+            userInfo: ReminderActionPayload(action: .openURL(
+                URL(string: "https://example.com/retired")!
+            )).userInfo,
+            requestIdentifier: "com.cmsjcm.QuotaPulse.daily-reminder.retired.daily",
+            configurations: [reminder]
+        ))
+        XCTAssertNil(ReminderResponseActionResolver.resolve(
+            userInfo: [:],
+            requestIdentifier: "unrelated.notification",
+            configurations: [reminder]
+        ))
     }
 
     func testShortcutActionBuildsShortcutsProcessCommand() throws {

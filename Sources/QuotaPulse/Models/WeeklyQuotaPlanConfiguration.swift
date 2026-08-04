@@ -9,7 +9,7 @@ struct WeeklyQuotaPlanConfiguration: Codable, Equatable, Sendable {
 }
 
 enum WeeklyQuotaPlanPreferences {
-    private static let storageKey = "QuotaPulse.weeklyQuotaPlan.configuration"
+    private static let storageKey = "QuotaPulse.v2.weeklyQuotaPlan.configuration"
 
     static func load(from defaults: UserDefaults = .standard) -> WeeklyQuotaPlanConfiguration {
         guard let data = defaults.data(forKey: storageKey),

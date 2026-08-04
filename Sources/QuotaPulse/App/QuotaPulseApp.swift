@@ -36,10 +36,12 @@ struct QuotaPulseApp: App {
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    let language = LanguageSettings()
-    let notificationService = QuotaNotificationService()
+    private let shouldTerminateAsDuplicate: Bool
+    private let performedFreshStart: Bool
+    lazy var language = LanguageSettings()
+    lazy var notificationService = QuotaNotificationService()
     let backupController = ConfigurationBackupController()
-    let localNotificationHTTPToken = LocalNotificationHTTPTokenStore.loadOrCreate()
+    lazy var localNotificationHTTPToken = LocalNotificationHTTPTokenStore.loadOrCreate()
     lazy var localNotificationHTTPAPI = try? LocalNotificationHTTPAPI(
         token: localNotificationHTTPToken,
         sendNotification: { [notificationService] title, body in await notificationService.send(title: title, body: body) }
@@ -48,9 +50,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     lazy var windowController = FloatingWindowController(store: store, language: language)
     private var refreshTask: Task<Void, Never>?
 
+    override init() {
+        shouldTerminateAsDuplicate = Self.isDuplicateInstance
+        performedFreshStart = shouldTerminateAsDuplicate ? false : FreshStartPolicy.prepare()
+        super.init()
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         guard !activateExistingInstanceAndTerminateIfNeeded() else { return }
         NSApp.setActivationPolicy(.accessory)
+        if performedFreshStart {
+            notificationService.clearAllNotifications()
+        }
         localNotificationHTTPAPI?.start()
         windowController.show()
         refreshTask = Task { await store.start() }
@@ -76,20 +87,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func activateExistingInstanceAndTerminateIfNeeded() -> Bool {
+        guard shouldTerminateAsDuplicate else { return false }
         guard let bundleIdentifier = Bundle.main.bundleIdentifier else { return false }
         let currentProcessIdentifier = ProcessInfo.processInfo.processIdentifier
         let runningApplications = NSRunningApplication.runningApplications(
             withBundleIdentifier: bundleIdentifier
         ).filter { !$0.isTerminated }
-        guard SingleInstancePolicy.shouldTerminateCurrentProcess(
-            currentProcessIdentifier: currentProcessIdentifier,
-            runningProcessIdentifiers: runningApplications.map(\.processIdentifier)
-        ) else { return false }
-
         runningApplications.first { $0.processIdentifier != currentProcessIdentifier }?
             .activate(options: [.activateAllWindows])
         NSApp.terminate(nil)
         return true
+    }
+
+    private static var isDuplicateInstance: Bool {
+        guard let bundleIdentifier = Bundle.main.bundleIdentifier else { return false }
+        let currentProcessIdentifier = ProcessInfo.processInfo.processIdentifier
+        return SingleInstancePolicy.shouldTerminateCurrentProcess(
+            currentProcessIdentifier: currentProcessIdentifier,
+            runningProcessIdentifiers: NSRunningApplication.runningApplications(
+                withBundleIdentifier: bundleIdentifier
+            ).filter { !$0.isTerminated }.map(\.processIdentifier)
+        )
     }
 }
 

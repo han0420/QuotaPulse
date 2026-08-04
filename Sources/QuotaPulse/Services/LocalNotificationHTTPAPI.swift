@@ -50,7 +50,7 @@ final class LocalNotificationHTTPAPI: @unchecked Sendable {
     private let listener: NWListener
     private let token: String
     private let sendNotification: @Sendable (String, String) async -> Void
-    private let queue = DispatchQueue(label: "com.cmsjcm.QuotaPulse.notification-http")
+    private let queue = DispatchQueue(label: "com.cmsjcm.QuotaPulse.v2.notification-http")
 
     init(token: String, sendNotification: @escaping @Sendable (String, String) async -> Void) throws {
         self.token = token
@@ -101,7 +101,7 @@ final class LocalNotificationHTTPAPI: @unchecked Sendable {
 }
 
 enum LocalNotificationHTTPTokenStore {
-    private static let key = "QuotaPulse.localNotificationHTTP.token"
+    private static let key = "QuotaPulse.v2.localNotificationHTTP.token"
 
     static func loadOrCreate(from defaults: UserDefaults = .standard) -> String {
         if let token = defaults.string(forKey: key), !token.isEmpty { return token }

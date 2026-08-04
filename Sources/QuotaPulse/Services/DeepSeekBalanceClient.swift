@@ -91,7 +91,7 @@ enum DeepSeekSettingsValidation {
 }
 
 enum DeepSeekAPIKeyStore {
-    private static let storageKey = "QuotaPulse.deepSeekBalance.apiKey"
+    private static let storageKey = "QuotaPulse.v2.deepSeekBalance.apiKey"
 
     static func save(_ key: String, to defaults: UserDefaults = .standard) {
         defaults.set(key, forKey: storageKey)

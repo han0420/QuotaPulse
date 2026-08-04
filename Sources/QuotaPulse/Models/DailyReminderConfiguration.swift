@@ -36,9 +36,9 @@ enum ReminderClickAction: Equatable, Sendable {
 }
 
 struct ReminderActionPayload: Equatable, Sendable {
-    static let typeKey = "QuotaPulse.action.type"
-    static let valueKey = "QuotaPulse.action.value"
-    static let workingDirectoryKey = "QuotaPulse.action.workingDirectory"
+    static let typeKey = "QuotaPulse.v2.action.type"
+    static let valueKey = "QuotaPulse.v2.action.value"
+    static let workingDirectoryKey = "QuotaPulse.v2.action.workingDirectory"
 
     let type: ReminderActionType
     let value: String?
@@ -110,6 +110,24 @@ struct ReminderActionPayload: Equatable, Sendable {
     }
 }
 
+enum ReminderResponseActionResolver {
+    static func resolve(
+        userInfo: [AnyHashable: Any],
+        requestIdentifier: String,
+        configurations: [DailyReminderConfiguration]
+    ) -> ReminderClickAction? {
+        guard requestIdentifier.hasPrefix("\(DailyReminderConfiguration.notificationIdentifierPrefix).")
+        else { return nil }
+        if let action = ReminderActionPayload(userInfo: userInfo)?.clickAction {
+            return action
+        }
+        return configurations.first { configuration in
+            configuration.isEnabled
+                && requestIdentifier.hasPrefix("\(configuration.notificationIdentifier).")
+        }?.clickAction
+    }
+}
+
 struct ReminderNotificationSchedule: Equatable, Sendable {
     let identifier: String
     let dateComponents: DateComponents
@@ -117,16 +135,17 @@ struct ReminderNotificationSchedule: Equatable, Sendable {
 }
 
 struct DailyReminderConfiguration: Codable, Equatable, Identifiable, Sendable {
+    static let notificationIdentifierPrefix = "com.cmsjcm.QuotaPulse.v2.daily-reminder"
+
     let id: UUID
     var isEnabled: Bool
     var hour: Int
     var minute: Int
     var message: String
-    var urlString: String?
-    var scheduleType: ReminderScheduleType?
+    var scheduleType: ReminderScheduleType
     var scheduledDate: Date?
     var weekdays: Set<Int>?
-    var actionType: ReminderActionType?
+    var actionType: ReminderActionType
     var actionValue: String?
     var workingDirectory: String?
 
@@ -136,11 +155,10 @@ struct DailyReminderConfiguration: Codable, Equatable, Identifiable, Sendable {
         hour: Int,
         minute: Int,
         message: String,
-        urlString: String? = nil,
-        scheduleType: ReminderScheduleType? = nil,
+        scheduleType: ReminderScheduleType = .daily,
         scheduledDate: Date? = nil,
         weekdays: Set<Int>? = nil,
-        actionType: ReminderActionType? = nil,
+        actionType: ReminderActionType = .none,
         actionValue: String? = nil,
         workingDirectory: String? = nil
     ) {
@@ -149,7 +167,6 @@ struct DailyReminderConfiguration: Codable, Equatable, Identifiable, Sendable {
         self.hour = hour
         self.minute = minute
         self.message = message
-        self.urlString = urlString
         self.scheduleType = scheduleType
         self.scheduledDate = scheduledDate
         self.weekdays = weekdays
@@ -158,17 +175,10 @@ struct DailyReminderConfiguration: Codable, Equatable, Identifiable, Sendable {
         self.workingDirectory = workingDirectory
     }
 
-    var effectiveScheduleType: ReminderScheduleType { scheduleType ?? .daily }
-
-    var effectiveActionType: ReminderActionType {
-        if let actionType { return actionType }
-        return normalizedURLString == nil ? .none : .url
-    }
-
-    var effectiveActionValue: String? {
+    var normalizedActionValue: String? {
         let normalizedAction = actionValue?.trimmingCharacters(in: .whitespacesAndNewlines)
         if let normalizedAction, !normalizedAction.isEmpty { return normalizedAction }
-        return effectiveActionType == .url ? normalizedURLString : nil
+        return nil
     }
 
     var normalizedMessage: String {
@@ -180,13 +190,8 @@ struct DailyReminderConfiguration: Codable, Equatable, Identifiable, Sendable {
         return DateComponents(hour: hour, minute: minute)
     }
 
-    var normalizedURLString: String? {
-        let normalized = urlString?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return normalized.isEmpty ? nil : normalized
-    }
-
     var destinationURL: URL? {
-        Self.webURL(from: effectiveActionValue)
+        Self.webURL(from: normalizedActionValue)
     }
 
     static func webURL(from rawValue: String?) -> URL? {
@@ -200,20 +205,20 @@ struct DailyReminderConfiguration: Codable, Equatable, Identifiable, Sendable {
     }
 
     var clickAction: ReminderClickAction? {
-        switch effectiveActionType {
+        switch actionType {
         case .none:
             return ReminderClickAction.none
         case .url:
             guard let destinationURL else { return nil }
             return .openURL(destinationURL)
         case .openPath:
-            guard let path = effectiveActionValue, path.hasPrefix("/") else { return nil }
+            guard let path = normalizedActionValue, path.hasPrefix("/") else { return nil }
             return .openPath(path)
         case .shortcut:
-            guard let name = effectiveActionValue, !name.isEmpty else { return nil }
+            guard let name = normalizedActionValue, !name.isEmpty else { return nil }
             return .shortcut(name)
         case .python:
-            guard let scriptPath = effectiveActionValue,
+            guard let scriptPath = normalizedActionValue,
                   scriptPath.hasPrefix("/"),
                   URL(fileURLWithPath: scriptPath).pathExtension.lowercased() == "py",
                   let workingDirectory = workingDirectory?.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -226,10 +231,27 @@ struct DailyReminderConfiguration: Codable, Equatable, Identifiable, Sendable {
 
     var hasValidDestination: Bool { clickAction != nil }
 
+    var hasValidStoredShape: Bool {
+        guard (0...23).contains(hour),
+              (0...59).contains(minute),
+              !normalizedMessage.isEmpty,
+              clickAction != nil else { return false }
+
+        switch scheduleType {
+        case .once:
+            return scheduledDate != nil
+        case .daily:
+            return true
+        case .weekly:
+            guard let weekdays, !weekdays.isEmpty else { return false }
+            return weekdays.allSatisfy { (1...7).contains($0) }
+        }
+    }
+
     var isValid: Bool { isValid(at: .now) }
 
     func isCompleted(at now: Date = .now) -> Bool {
-        effectiveScheduleType == .once
+        scheduleType == .once
             && scheduledDate.map { $0 <= now } == true
     }
 
@@ -245,7 +267,7 @@ struct DailyReminderConfiguration: Codable, Equatable, Identifiable, Sendable {
         calendar: Calendar = .current
     ) -> [ReminderNotificationSchedule] {
         guard let time = triggerDateComponents else { return [] }
-        switch effectiveScheduleType {
+        switch scheduleType {
         case .once:
             guard let scheduledDate, scheduledDate > now else { return [] }
             let components = calendar.dateComponents(
@@ -282,7 +304,7 @@ struct DailyReminderConfiguration: Codable, Equatable, Identifiable, Sendable {
     }
 
     var notificationIdentifier: String {
-        "com.cmsjcm.QuotaPulse.daily-reminder.\(id.uuidString.lowercased())"
+        "\(Self.notificationIdentifierPrefix).\(id.uuidString.lowercased())"
     }
 }
 
@@ -308,35 +330,21 @@ enum ReminderListPolicy {
 }
 
 enum DailyReminderPreferences {
-    private static let remindersKey = "QuotaPulse.dailyReminders.v1"
-    private static let enabledKey = "QuotaPulse.dailyReminder.enabled"
-    private static let hourKey = "QuotaPulse.dailyReminder.hour"
-    private static let minuteKey = "QuotaPulse.dailyReminder.minute"
-    private static let messageKey = "QuotaPulse.dailyReminder.message"
+    private static let remindersKey = "QuotaPulse.v2.dailyReminders"
 
     static func loadAll(from defaults: UserDefaults = .standard) -> [DailyReminderConfiguration] {
-        if let data = defaults.data(forKey: remindersKey),
-           let reminders = try? JSONDecoder().decode([DailyReminderConfiguration].self, from: data) {
-            return reminders
-        }
-
-        guard defaults.object(forKey: enabledKey) != nil || defaults.object(forKey: messageKey) != nil else {
-            return []
-        }
-        let migrated = DailyReminderConfiguration(
-            isEnabled: defaults.bool(forKey: enabledKey),
-            hour: defaults.object(forKey: hourKey) as? Int ?? 9,
-            minute: defaults.object(forKey: minuteKey) as? Int ?? 0,
-            message: defaults.string(forKey: messageKey) ?? ""
-        )
-        saveAll([migrated], to: defaults)
-        return [migrated]
+        guard let data = defaults.data(forKey: remindersKey),
+              let reminders = try? JSONDecoder().decode([DailyReminderConfiguration].self, from: data),
+              reminders.allSatisfy(\.hasValidStoredShape)
+        else { return [] }
+        return reminders
     }
 
     static func saveAll(
         _ configurations: [DailyReminderConfiguration],
         to defaults: UserDefaults = .standard
     ) {
+        guard configurations.allSatisfy(\.hasValidStoredShape) else { return }
         guard let data = try? JSONEncoder().encode(configurations) else { return }
         defaults.set(data, forKey: remindersKey)
     }

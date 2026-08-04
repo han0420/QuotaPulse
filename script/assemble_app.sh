@@ -3,7 +3,7 @@ set -euo pipefail
 
 CONFIGURATION="${1:-debug}"
 APP_NAME="QuotaPulse"
-BUNDLE_ID="com.cmsjcm.QuotaPulse"
+BUNDLE_ID="com.cmsjcm.QuotaPulse.v2"
 VERSION="${QUOTAPULSE_VERSION:-0.1.0}"
 BUILD_NUMBER="${QUOTAPULSE_BUILD_NUMBER:-1}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -96,6 +96,11 @@ if [[ -z "$SIGNING_IDENTITY" ]]; then
 fi
 
 SIGN_ARGS=(--force --deep --sign "$SIGNING_IDENTITY" --identifier "$BUNDLE_ID")
+if [[ "$SIGNING_IDENTITY" == "-" ]]; then
+  # Keep the local app identity stable across rebuilds so macOS can route
+  # responses for previously scheduled notifications to the new binary.
+  SIGN_ARGS+=(--requirements "=designated => identifier \"$BUNDLE_ID\"")
+fi
 if [[ "$CONFIGURATION" == "release" && "$SIGNING_IDENTITY" != "-" ]]; then
   SIGN_ARGS+=(--options runtime --timestamp)
 fi

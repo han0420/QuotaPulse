@@ -74,7 +74,7 @@ Key ownership:
 - Keep domain policy testable without SwiftUI, AppKit, or live network calls.
 - `QuotaStore` coordinates data; views render state and emit user intent. Views do not call quota endpoints directly.
 - Services own external I/O. Pass process arguments structurally; do not construct shell commands from user input.
-- Persist lightweight preferences in `UserDefaults` with safe defaults and backward-compatible decoding.
+- Persist lightweight preferences in `UserDefaults` with safe new-install defaults and strict current-schema decoding. Do not add backward-compatible decoding or migration.
 - Do not overwrite one provider with stale fallback data after its direct client succeeds.
 - Preserve the first-reading baseline behavior: alerts compare subsequent readings, not app-launch state.
 - Add every user-visible string to both `en.lproj` and `zh-Hans.lproj`.
@@ -99,7 +99,7 @@ If SwiftPM cannot write its user cache in a sandbox, point `CLANG_MODULE_CACHE_P
 - Follow RED → GREEN → REFACTOR; do not write production behavior before a failing test.
 - Test public behavior and real policy objects, not private implementation details.
 - Parsing changes need sanitized fixtures or constructed inputs.
-- Persistence changes need default, round-trip, invalid-data, and migration coverage as applicable.
+- Persistence changes need default, round-trip, invalid-data, and old-schema rejection coverage as applicable.
 - Threshold/time boundary behavior needs exact edge-case tests.
 - UI-only behavior that cannot be unit tested requires explicit manual checks in its spec.
 
