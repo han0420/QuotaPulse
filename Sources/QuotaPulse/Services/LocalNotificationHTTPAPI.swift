@@ -101,7 +101,7 @@ final class LocalNotificationHTTPAPI: @unchecked Sendable {
 }
 
 enum LocalNotificationHTTPTokenStore {
-    private static let key = "QuotaPulse.localNotificationHTTP.token"
+    private static let key = "QuotaPulse.v2.localNotificationHTTP.token"
 
     static func loadOrCreate(from defaults: UserDefaults = .standard) -> String {
         if let token = defaults.string(forKey: key), !token.isEmpty { return token }

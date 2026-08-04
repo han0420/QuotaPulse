@@ -27,7 +27,7 @@ QuotaPulse is a native macOS menu bar and floating companion for Codex and Claud
 - Colors each quota ring independently: blue above 50%, amber from 10% through 50%, and coral at 10% or below.
 - Keeps a compact dual-ring indicator and the lowest remaining percentage in the menu bar.
 - Runs as a single app instance to avoid duplicate quota refreshes, windows, and notifications.
-- Imports and exports non-sensitive app configuration from the menu bar for local backup and migration.
+- Imports and exports current-format non-sensitive app configuration from the menu bar for local backup and transfer.
 - Supports instant Simplified Chinese and English switching in the floating panel and Settings, with the preference saved locally.
 - Supports launching automatically after macOS login.
 - Supports configurable quota alerts with either one fixed interval or two consumption stages.

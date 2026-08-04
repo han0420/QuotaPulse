@@ -1,7 +1,7 @@
 import Foundation
 
 struct AppConfigurationBackup: Codable, Equatable {
-    static let currentVersion = 1
+    static let currentVersion = 2
 
     let version: Int
     let language: AppLanguage
@@ -17,7 +17,7 @@ enum AppConfigurationBackupError: Error, Equatable {
 }
 
 enum AppConfigurationBackupService {
-    private static let languageKey = "QuotaPulse.appLanguage"
+    private static let languageKey = "QuotaPulse.v2.appLanguage"
 
     static func exportData(from defaults: UserDefaults = .standard) throws -> Data {
         let language = defaults.string(forKey: languageKey)
@@ -69,7 +69,7 @@ enum AppConfigurationBackupService {
         guard !reminder.normalizedMessage.isEmpty,
               reminder.clickAction != nil,
               reminder.triggerDateComponents != nil else { return false }
-        switch reminder.effectiveScheduleType {
+        switch reminder.scheduleType {
         case .once:
             return reminder.scheduledDate != nil
         case .daily:

@@ -34,21 +34,16 @@ enum DailyReminderScheduleResult {
 }
 
 enum ReminderNotificationIdentifierPolicy {
-    private static let managedPrefixes = [
-        "com.cmsjcm.QuotaPulse.daily-reminder.",
-        "com.cmsjcm.QuotaDot.daily-reminder."
-    ]
-
     static func identifiersToRemove(from identifiers: [String]) -> [String] {
-        identifiers.filter { identifier in
-            managedPrefixes.contains { identifier.hasPrefix($0) }
+        identifiers.filter {
+            $0.hasPrefix("\(DailyReminderConfiguration.notificationIdentifierPrefix).")
         }
     }
 }
 
 enum ReminderSnoozePolicy {
-    static let tenMinutesActionIdentifier = "QuotaPulse.snooze.10m"
-    static let oneHourActionIdentifier = "QuotaPulse.snooze.1h"
+    static let tenMinutesActionIdentifier = "QuotaPulse.v2.snooze.10m"
+    static let oneHourActionIdentifier = "QuotaPulse.v2.snooze.1h"
 
     static func delay(for actionIdentifier: String) -> TimeInterval? {
         switch actionIdentifier {
@@ -84,8 +79,8 @@ private final class NotificationResponseCompletion: @unchecked Sendable {
 }
 
 final class QuotaNotificationService: NSObject, UNUserNotificationCenterDelegate, @unchecked Sendable {
-    private static let dailyReminderIdentifierPrefix = "com.cmsjcm.QuotaPulse.daily-reminder"
-    private static let reminderCategoryIdentifier = "QuotaPulse.reminder.actions"
+    private static let dailyReminderIdentifierPrefix = DailyReminderConfiguration.notificationIdentifierPrefix
+    private static let reminderCategoryIdentifier = "QuotaPulse.v2.reminder.actions"
     private let center: UNUserNotificationCenter
     private let logger = Logger(subsystem: "com.cmsjcm.QuotaPulse", category: "notification")
 
@@ -151,6 +146,11 @@ final class QuotaNotificationService: NSObject, UNUserNotificationCenterDelegate
         }
     }
 
+    func clearAllNotifications() {
+        center.removeAllPendingNotificationRequests()
+        center.removeAllDeliveredNotifications()
+    }
+
     func synchronizeReminders(
         _ configurations: [DailyReminderConfiguration],
         title: String,
@@ -158,10 +158,11 @@ final class QuotaNotificationService: NSObject, UNUserNotificationCenterDelegate
         snoozeOneHourTitle: String
     ) async -> DailyReminderScheduleResult {
         let now = Date.now
+        let pending = await center.pendingNotificationRequests()
         let enabled = configurations.filter(\.isEnabled)
         var scheduledConfigurations: [(DailyReminderConfiguration, [ReminderNotificationSchedule])] = []
         for configuration in enabled {
-            if configuration.effectiveScheduleType == .once,
+            if configuration.scheduleType == .once,
                let scheduledDate = configuration.scheduledDate,
                scheduledDate <= now {
                 continue
@@ -174,7 +175,6 @@ final class QuotaNotificationService: NSObject, UNUserNotificationCenterDelegate
             ))
         }
 
-        let pending = await center.pendingNotificationRequests()
         let existingIdentifiers = ReminderNotificationIdentifierPolicy.identifiersToRemove(
             from: pending.map(\.identifier)
         )
@@ -280,17 +280,18 @@ final class QuotaNotificationService: NSObject, UNUserNotificationCenterDelegate
             return
         }
 
-        let payload = ReminderActionPayload(
-            userInfo: response.notification.request.content.userInfo
+        let clickAction = ReminderResponseActionResolver.resolve(
+            userInfo: response.notification.request.content.userInfo,
+            requestIdentifier: response.notification.request.identifier,
+            configurations: DailyReminderPreferences.loadAll()
         )
-        let clickAction = payload?.clickAction
         guard let clickAction else {
             logger.error("Reminder response ignored reason=missing-or-invalid-payload")
             completionHandler()
             return
         }
         logger.info(
-            "Reminder response payload parsed type=\(clickAction.diagnosticLabel, privacy: .public)"
+            "Reminder response action resolved type=\(clickAction.diagnosticLabel, privacy: .public)"
         )
         let completion = NotificationResponseCompletion(completionHandler)
         Task { @MainActor in

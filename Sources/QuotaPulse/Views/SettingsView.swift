@@ -454,24 +454,26 @@ struct SettingsView: View {
         var normalized = reminders
         for index in normalized.indices {
             normalized[index].message = normalized[index].normalizedMessage
-            normalized[index].scheduleType = normalized[index].effectiveScheduleType
-            normalized[index].actionType = normalized[index].effectiveActionType
-            normalized[index].actionValue = normalized[index].effectiveActionValue
+            normalized[index].actionValue = normalized[index].normalizedActionValue
             normalized[index].workingDirectory = normalized[index].workingDirectory?
                 .trimmingCharacters(in: .whitespacesAndNewlines)
-            normalized[index].urlString = nil
         }
-        let enabled = normalized.filter(\.isEnabled)
-        guard enabled.allSatisfy({ !$0.normalizedMessage.isEmpty }) else {
+        guard normalized.allSatisfy({ !$0.normalizedMessage.isEmpty }) else {
             reminderStatusKey = "settings.reminder.status.empty"
             reminderStatusIsError = true
             return
         }
-        guard enabled.allSatisfy({ $0.clickAction != nil }) else {
+        guard normalized.allSatisfy({ $0.clickAction != nil }) else {
             reminderStatusKey = "settings.reminder.status.invalidAction"
             reminderStatusIsError = true
             return
         }
+        guard normalized.allSatisfy(\.hasValidStoredShape) else {
+            reminderStatusKey = "settings.reminder.status.invalidSchedule"
+            reminderStatusIsError = true
+            return
+        }
+        let enabled = normalized.filter(\.isEnabled)
         guard enabled.allSatisfy({ !$0.notificationSchedules().isEmpty }) else {
             reminderStatusKey = "settings.reminder.status.invalidSchedule"
             reminderStatusIsError = true
@@ -614,7 +616,7 @@ private struct DailyReminderEditor: View {
             .pickerStyle(.segmented)
             .disabled(!reminder.isEnabled)
 
-            switch reminder.effectiveScheduleType {
+            switch reminder.scheduleType {
             case .once:
                 DatePicker(
                     language.text("settings.reminder.schedule.date"),
@@ -669,7 +671,7 @@ private struct DailyReminderEditor: View {
             .labelsHidden()
             .disabled(!reminder.isEnabled)
 
-            switch reminder.effectiveActionType {
+            switch reminder.actionType {
             case .none:
                 Text(language.text("settings.reminder.action.none.detail"))
                     .font(.caption)
@@ -795,7 +797,7 @@ private struct DailyReminderEditor: View {
 
     private var scheduleType: Binding<ReminderScheduleType> {
         Binding(
-            get: { reminder.effectiveScheduleType },
+            get: { reminder.scheduleType },
             set: { newValue in
                 reminder.scheduleType = newValue
                 if newValue == .once,
@@ -811,21 +813,20 @@ private struct DailyReminderEditor: View {
 
     private var actionType: Binding<ReminderActionType> {
         Binding(
-            get: { reminder.effectiveActionType },
+            get: { reminder.actionType },
             set: { newValue in
-                if newValue != reminder.effectiveActionType {
+                if newValue != reminder.actionType {
                     reminder.actionValue = nil
                     reminder.workingDirectory = nil
                 }
                 reminder.actionType = newValue
-                reminder.urlString = nil
             }
         )
     }
 
     private var actionValue: Binding<String> {
         Binding(
-            get: { reminder.effectiveActionValue ?? "" },
+            get: { reminder.normalizedActionValue ?? "" },
             set: { reminder.actionValue = $0.isEmpty ? nil : $0 }
         )
     }

@@ -24,6 +24,7 @@
 | 周计划额度与工作日预算 | [specs/weekly-quota-plan.md](specs/weekly-quota-plan.md) |
 | 可配置额度阈值提醒 | [specs/quota-notification.md](specs/quota-notification.md) |
 | 定时提醒与点击动作 | [specs/scheduled-reminders.md](specs/scheduled-reminders.md) |
+| 纯新版本断代与配置清理 | [specs/fresh-version-cutover.md](specs/fresh-version-cutover.md) |
 | 天气背景与定位 | [specs/weather-background.md](specs/weather-background.md) |
 | 本机活动检测 | [specs/local-activity-detection.md](specs/local-activity-detection.md) |
 | 运行时中英文本地化 | [specs/localization.md](specs/localization.md) |
