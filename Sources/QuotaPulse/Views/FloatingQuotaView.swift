@@ -48,6 +48,7 @@ struct FloatingQuotaView: View {
 
             VStack(spacing: 0) {
                 header
+                worldClockBar
                 if store.providers.isEmpty {
                     unavailableState
                 } else {
@@ -144,6 +145,55 @@ struct FloatingQuotaView: View {
         }
         .padding(.horizontal, 20)
         .frame(height: 62)
+    }
+
+    private var worldClockBar: some View {
+        TimelineView(.everyMinute) { timeline in
+            let times = WorldClockDisplay.times(
+                at: timeline.date,
+                language: language.language
+            )
+
+            HStack(spacing: 12) {
+                worldClockItem(
+                    title: language.text("clock.local"),
+                    time: "\(times.localWeekday) \(times.local)",
+                    systemImage: "clock"
+                )
+                Divider()
+                    .frame(height: 12)
+                    .opacity(0.45)
+                worldClockItem(
+                    title: language.text("clock.unitedStates"),
+                    time: "\(times.unitedStatesWeekday) \(times.unitedStates)",
+                    systemImage: "globe.americas"
+                )
+            }
+        }
+        .padding(.horizontal, 20)
+        .frame(height: FloatingWindowLayout.worldClockHeight)
+    }
+
+    private func worldClockItem(
+        title: String,
+        time: String,
+        systemImage: String
+    ) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: systemImage)
+                .font(.system(size: 8.5, weight: .medium))
+            Text(title)
+                .font(.system(size: 9, weight: .medium))
+                .lineLimit(1)
+            Spacer(minLength: 3)
+            Text(time)
+                .font(.system(size: 10.5, weight: .semibold, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(AppColors.primaryText)
+        }
+        .foregroundStyle(AppColors.secondaryText)
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
     }
 
     private var footer: some View {

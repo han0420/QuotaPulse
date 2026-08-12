@@ -8,10 +8,19 @@ enum QuotaFormatters {
         return formatter
     }
 
-    static func clock(language: AppLanguage) -> DateFormatter {
+    static func clock(language: AppLanguage, timeZone: TimeZone? = nil) -> DateFormatter {
         let formatter = DateFormatter()
         formatter.locale = language.locale
+        formatter.timeZone = timeZone
         formatter.dateFormat = "HH:mm"
+        return formatter
+    }
+
+    static func weekday(language: AppLanguage, timeZone: TimeZone) -> DateFormatter {
+        let formatter = DateFormatter()
+        formatter.locale = language.locale
+        formatter.timeZone = timeZone
+        formatter.dateFormat = "EEE"
         return formatter
     }
 
@@ -34,5 +43,32 @@ enum QuotaFormatters {
         if hours >= 24 { return language.text("time.daysHours", hours / 24, hours % 24) }
         if hours > 0 { return language.text("time.hoursMinutes", hours, minutes) }
         return language.text("time.minutes", minutes)
+    }
+}
+
+struct WorldClockTimes: Equatable {
+    let localWeekday: String
+    let local: String
+    let unitedStatesWeekday: String
+    let unitedStates: String
+}
+
+enum WorldClockDisplay {
+    static let unitedStatesTimeZoneIdentifier = "America/Los_Angeles"
+
+    static func times(
+        at date: Date,
+        localTimeZone: TimeZone = .autoupdatingCurrent,
+        language: AppLanguage
+    ) -> WorldClockTimes {
+        let unitedStatesTimeZone = TimeZone(identifier: unitedStatesTimeZoneIdentifier)
+            ?? TimeZone(secondsFromGMT: -8 * 60 * 60)!
+
+        return WorldClockTimes(
+            localWeekday: QuotaFormatters.weekday(language: language, timeZone: localTimeZone).string(from: date),
+            local: QuotaFormatters.clock(language: language, timeZone: localTimeZone).string(from: date),
+            unitedStatesWeekday: QuotaFormatters.weekday(language: language, timeZone: unitedStatesTimeZone).string(from: date),
+            unitedStates: QuotaFormatters.clock(language: language, timeZone: unitedStatesTimeZone).string(from: date)
+        )
     }
 }

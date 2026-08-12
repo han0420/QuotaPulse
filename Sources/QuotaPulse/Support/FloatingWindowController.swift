@@ -12,6 +12,20 @@ enum FloatingWindowInteractionPolicy {
     }
 }
 
+enum FloatingWindowLayout {
+    static let worldClockHeight: CGFloat = 24
+
+    static func expandedHeight(
+        providerCount: Int,
+        hasCodexResetCredits: Bool
+    ) -> CGFloat {
+        96
+            + worldClockHeight
+            + CGFloat(max(providerCount, 1)) * 174
+            + (hasCodexResetCredits ? 28 : 0)
+    }
+}
+
 enum FloatingWindowPlacementPolicy {
     static let edgeInset: CGFloat = 18
     static let minimumVisibleSize = CGSize(width: 32, height: 32)
@@ -117,7 +131,10 @@ final class FloatingWindowController: NSObject {
     }
 
     private var expandedHeight: CGFloat {
-        96 + CGFloat(max(store.providers.count, 1)) * 174 + (store.codexResetCredits == nil ? 0 : 28)
+        FloatingWindowLayout.expandedHeight(
+            providerCount: store.providers.count,
+            hasCodexResetCredits: store.codexResetCredits != nil
+        )
     }
 
     private var compactSize: NSSize {

@@ -20,6 +20,8 @@
 "backup.failure.message" = "请选择有效的 QuotaPulse 配置备份后重试。";
 
 "header.switchLanguage" = "切换语言";
+"clock.local" = "当地时间";
+"clock.unitedStates" = "美国时间";
 "status.cached" = "部分数据暂存";
 "status.healthy" = "状态健康";
 "status.warning" = "需要留意";

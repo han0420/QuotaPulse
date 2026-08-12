@@ -2,6 +2,23 @@ import XCTest
 @testable import QuotaPulse
 
 final class FloatingWindowInteractionPolicyTests: XCTestCase {
+    func testExpandedHeightReservesWorldClockStrip() {
+        XCTAssertEqual(
+            FloatingWindowLayout.expandedHeight(
+                providerCount: 1,
+                hasCodexResetCredits: false
+            ),
+            294
+        )
+        XCTAssertEqual(
+            FloatingWindowLayout.expandedHeight(
+                providerCount: 1,
+                hasCodexResetCredits: true
+            ),
+            322
+        )
+    }
+
     func testKeepsCompactStateWhilePrimaryButtonIsPressedOutsideWindow() {
         XCTAssertEqual(
             FloatingWindowInteractionPolicy.targetCompactState(
