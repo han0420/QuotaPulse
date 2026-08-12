@@ -101,20 +101,40 @@ struct QuotaRing: View {
             Text(usageCopy)
                 .font(.system(size: 8.5, weight: .medium))
                 .foregroundStyle(AppColors.secondaryText)
-            Label(
-                resetAt.map {
-                    language.text(
-                        "quota.resets",
-                        QuotaFormatters.reset(language: language.language).string(from: $0)
-                    )
-                } ?? language.text("quota.resetWaiting"),
-                systemImage: "clock"
-            )
-                .font(.system(size: 8.5, weight: .medium))
-                .foregroundStyle(AppColors.secondaryText)
-                .lineLimit(1)
+            resetRow
         }
         .frame(maxWidth: expanded ? .infinity : nil, alignment: expanded ? .leading : .center)
+    }
+
+    @ViewBuilder
+    private var resetRow: some View {
+        if let resetAt {
+            TimelineView(.everyMinute) { timeline in
+                QuotaResetLabel(
+                    text: resetCopy(resetAt: resetAt, now: timeline.date),
+                    compact: !expanded
+                )
+            }
+        } else {
+            QuotaResetLabel(
+                text: language.text("quota.resetWaiting"),
+                compact: !expanded
+            )
+        }
+    }
+
+    private func resetCopy(resetAt: Date, now: Date) -> String {
+        let absoluteReset = language.text(
+            "quota.resets",
+            QuotaFormatters.reset(language: language.language).string(from: resetAt)
+        )
+        let countdown = expanded
+            ? QuotaFormatters.resetCountdown(from: resetAt, language: language, now: now)
+            : QuotaFormatters.compactResetCountdown(from: resetAt, language: language, now: now)
+        guard let countdown else {
+            return absoluteReset
+        }
+        return "\(absoluteReset) · \(countdown)"
     }
 
     private var percentNumber: String {
@@ -125,5 +145,26 @@ struct QuotaRing: View {
     private var usageCopy: String {
         guard let remaining else { return language.text("quota.syncing") }
         return language.text("quota.used", Int(((1 - remaining) * 100).rounded()))
+    }
+}
+
+struct QuotaResetLabel: View {
+    let text: String
+    let compact: Bool
+
+    var body: some View {
+        Group {
+            if compact {
+                Text(text)
+                    .font(.system(size: 7.5, weight: .medium))
+                    .fixedSize(horizontal: true, vertical: false)
+            } else {
+                Label(text, systemImage: "clock")
+                    .font(.system(size: 8.5, weight: .medium))
+                    .minimumScaleFactor(0.85)
+            }
+        }
+        .foregroundStyle(AppColors.secondaryText)
+        .lineLimit(1)
     }
 }

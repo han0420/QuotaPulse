@@ -1,5 +1,12 @@
 import SwiftUI
 
+enum WorldClockBarLayout {
+    static let horizontalPadding: CGFloat = 16
+    static let sectionSpacing: CGFloat = 4
+    static let itemSpacing: CGFloat = 2
+    static let dividerWidth: CGFloat = 1
+}
+
 struct FloatingQuotaView: View {
     let store: QuotaStore
     let language: LanguageSettings
@@ -154,46 +161,31 @@ struct FloatingQuotaView: View {
                 language: language.language
             )
 
-            HStack(spacing: 12) {
-                worldClockItem(
+            HStack(spacing: WorldClockBarLayout.sectionSpacing) {
+                WorldClockItem(
                     title: language.text("clock.local"),
                     time: "\(times.localWeekday) \(times.local)",
+                    dateRelation: times.localDateRelation.map {
+                        language.text($0.localizationKey)
+                    },
                     systemImage: "clock"
                 )
                 Divider()
-                    .frame(height: 12)
+                    .frame(width: WorldClockBarLayout.dividerWidth, height: 12)
                     .opacity(0.45)
-                worldClockItem(
+                WorldClockItem(
                     title: language.text("clock.unitedStates"),
                     time: "\(times.unitedStatesWeekday) \(times.unitedStates)",
+                    dateRelation: times.unitedStatesDateRelation.map {
+                        language.text($0.localizationKey)
+                    },
                     systemImage: "globe.americas"
                 )
             }
+            .frame(maxWidth: .infinity)
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, WorldClockBarLayout.horizontalPadding)
         .frame(height: FloatingWindowLayout.worldClockHeight)
-    }
-
-    private func worldClockItem(
-        title: String,
-        time: String,
-        systemImage: String
-    ) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: systemImage)
-                .font(.system(size: 8.5, weight: .medium))
-            Text(title)
-                .font(.system(size: 9, weight: .medium))
-                .lineLimit(1)
-            Spacer(minLength: 3)
-            Text(time)
-                .font(.system(size: 10.5, weight: .semibold, design: .rounded))
-                .monospacedDigit()
-                .foregroundStyle(AppColors.primaryText)
-        }
-        .foregroundStyle(AppColors.secondaryText)
-        .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .combine)
     }
 
     private var footer: some View {
@@ -261,6 +253,43 @@ struct FloatingQuotaView: View {
 
     private var compactWidth: CGFloat { CGFloat(max(store.providers.count, 1)) * 52 + CGFloat(max(store.providers.count - 1, 0)) * 8 }
     private func providerLowest(_ provider: ProviderUsage) -> Double? { [provider.session?.remainingPercent, provider.weekly?.remainingPercent].compactMap { $0 }.min() }
+}
+
+struct WorldClockItem: View {
+    let title: String
+    let time: String
+    let dateRelation: String?
+    let systemImage: String
+
+    var body: some View {
+        HStack(spacing: WorldClockBarLayout.itemSpacing) {
+            Image(systemName: systemImage)
+                .font(.system(size: 8.5, weight: .medium))
+            Text(title)
+                .font(.system(size: 9, weight: .medium))
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+                .layoutPriority(1)
+            if let dateRelation {
+                Text(dateRelation)
+                    .font(.system(size: 7.5, weight: .semibold, design: .rounded))
+                    .foregroundStyle(AppColors.accentIndigo)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 1.5)
+                    .background(AppColors.accentIndigo.opacity(0.12), in: Capsule())
+                    .fixedSize()
+            }
+            Text(time)
+                .font(.system(size: 10.5, weight: .semibold, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(AppColors.primaryText)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+                .layoutPriority(1)
+        }
+        .foregroundStyle(AppColors.secondaryText)
+        .accessibilityElement(children: .combine)
+    }
 }
 
 private struct CompactProviderBadge: View {
