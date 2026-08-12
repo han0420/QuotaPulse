@@ -20,6 +20,8 @@
 "backup.failure.message" = "Choose a valid QuotaPulse configuration backup and try again.";
 
 "header.switchLanguage" = "Switch language";
+"clock.local" = "Local time";
+"clock.unitedStates" = "U.S. time";
 "status.cached" = "Using cached data";
 "status.healthy" = "Healthy";
 "status.warning" = "Needs attention";
