@@ -13,6 +13,7 @@
 - 不提供任意窗口尺寸、固定展开或自定义主题。
 - 不在 Dock 中显示普通应用窗口。
 - 不提供美国城市或时区选择；本次只显示用于对齐 OpenAI 美国西海岸工作日的太平洋时间。
+- 不提供可配置的倒计时精度或日期差基准；倒计时沿用现有两段式精度，日期差固定以本机当地日期为基准。
 
 ## 用户行为与需求
 
@@ -33,6 +34,8 @@
 - R15：展开态 MUST 在标题区与 provider 详情之间显示一条 24pt 高的双时钟栏，并同时显示“当地时间”和“美国时间”。
 - R16：当地时间 MUST 跟随 macOS 当前时区；美国时间 MUST 使用 IANA 时区 `America/Los_Angeles`，以便自动处理美国太平洋标准时间和夏令时。
 - R17：两个时钟 MUST 使用本地化短星期加 `HH:mm` 24 小时制，并至少每分钟自动刷新；星期 MUST 分别按照各自时区计算，紧凑态不显示时钟。
+- R18：存在未来重置时间时，展开态 MUST 在绝对重置时间同一行追加本地化倒计时，并至少每分钟刷新；倒计时 MUST 使用“天+小时”“小时+分钟”或“分钟”，双额度窄列 MUST 使用语义等价的本地化紧凑单位以完整显示且不得依赖不可读的小字号，重置时间已到或已过时 MUST 隐藏倒计时而保留绝对时间。
+- R19：当地日期与美国太平洋日期不同时，双时钟栏 MUST 以本地日期为基准突出显示本地化日期差标记：当地为“今天”，美国为“昨天”或“明天”；两地同日时 MUST 隐藏两个标记。
 
 ## 验收场景
 
@@ -49,10 +52,12 @@
 - A11：Given Mac 当地时区为 `Asia/Shanghai` 且时间为冬季 `2026-01-15T12:00:00Z`，When 渲染双时钟，Then 当地时间显示 `20:00`，美国时间显示 `04:00`。
 - A12：Given 同一当地时区且时间为夏季 `2026-07-15T12:00:00Z`，When 渲染双时钟，Then 当地时间仍显示 `20:00`，美国时间显示 `05:00`，证明太平洋夏令时自动生效。
 - A13：Given Mac 当地时区为 `Asia/Shanghai` 且时间为 `2026-08-13T00:15:00Z`，When 以简体中文渲染双时钟，Then 当地显示 `周四 08:15`，美国显示 `周三 17:15`，分别反映跨日后的星期。
+- A14：Given 当前时间距额度重置还有 4 天 9 小时 30 分钟，When 渲染单额度重置行，Then 保留绝对时间并追加“还有 4 天 9 小时”；Given 在英文双额度窄列渲染同一倒计时，Then 使用 `4d 9h left` 并完整显示；Given 重置时间等于或早于当前时间，Then 不显示倒计时。
+- A15：Given 本机为 `Asia/Shanghai` 且同一时刻当地为周四、美国太平洋为周三，When 渲染双时钟，Then 当地突出“今天”、美国突出“昨天”；Given 两地日期相同，Then 两侧均不显示日期差标记。
 
 ## 技术方案
 
-`FloatingWindowController` 管理无边框 `NSPanel`、锚点、hover 监控和紧凑/展开尺寸；hover 状态转换由可测试策略决定，主鼠标键按住时不转换，避免与 AppKit 窗口拖动同时改写 frame。`FloatingWindowPlacementPolicy` 根据屏幕 `visibleFrame` 和窗口尺寸计算默认右上落点，并判定 frame 是否保留最小可抓取区域；菜单栏恢复和拖动后的自动回弹均采用此策略。`WeeklyQuotaBudget` 以有效重置时间减去周期时长得到周期起点，并计算连续时间下的计划剩余额度。`QuotaRing` 在周额度主环内附加计划百分比，并在环上标记计划位置。`WorldClockDisplay` 使用显式时区生成可测试的当地与美国太平洋星期和时间文本，`FloatingQuotaView` 通过分钟级 `TimelineView` 渲染双时钟栏，`FloatingWindowController` 同步为展开窗口增加 24pt 高度。`ProviderCard` 与 `QuotaRing` 展示 provider 细节；`MenuBarQuotaGlyph` 和 `QuotaPulseApp` 构成菜单栏入口。
+`FloatingWindowController` 管理无边框 `NSPanel`、锚点、hover 监控和紧凑/展开尺寸；hover 状态转换由可测试策略决定，主鼠标键按住时不转换，避免与 AppKit 窗口拖动同时改写 frame。`FloatingWindowPlacementPolicy` 根据屏幕 `visibleFrame` 和窗口尺寸计算默认右上落点，并判定 frame 是否保留最小可抓取区域；菜单栏恢复和拖动后的自动回弹均采用此策略。`WeeklyQuotaBudget` 以有效重置时间减去周期时长得到周期起点，并计算连续时间下的计划剩余额度。`QuotaRing` 在周额度主环内附加计划百分比，并在环上标记计划位置；其重置文本通过分钟级 `TimelineView` 追加由 `QuotaFormatters` 生成的未来倒计时。`WorldClockDisplay` 使用显式时区生成可测试的当地与美国太平洋星期、时间和相对本地日期的日期差标记；`FloatingQuotaView` 通过分钟级 `TimelineView` 渲染双时钟栏，并仅在跨日时以强调样式显示标记。`FloatingWindowController` 同步维护展开窗口所需高度。`ProviderCard` 与 `QuotaRing` 展示 provider 细节；`MenuBarQuotaGlyph` 和 `QuotaPulseApp` 构成菜单栏入口。
 
 ## 测试计划与实现映射
 
@@ -63,9 +68,11 @@
 - 拖动与 hover 互斥策略：`Tests/QuotaPulseTests/FloatingWindowInteractionPolicyTests.swift`。
 - 默认恢复位置策略：`Tests/QuotaPulseTests/FloatingWindowInteractionPolicyTests.swift`。
 - 拖动后可见性策略：`Tests/QuotaPulseTests/FloatingWindowInteractionPolicyTests.swift`。
-- 当地与美国太平洋时间格式、冬夏令时边界及跨日星期由 `Tests/QuotaPulseTests/WorldClockDisplayTests.swift` 覆盖。
+- 当地与美国太平洋时间格式、冬夏令时边界、跨日星期、昨天/今天/明天关系及同日隐藏由 `Tests/QuotaPulseTests/WorldClockDisplayTests.swift` 覆盖。
+- 重置倒计时的完整格式、未来边界和到期隐藏由 `Tests/QuotaPulseTests/QuotaModelsTests.swift` 覆盖；双额度紧凑格式与 139pt 列宽适配由 `Tests/QuotaPulseTests/QuotaResetDisplayTests.swift` 覆盖。
 - 手动检查紧凑态和展开态拖动不漂移、松开后 hover 恢复，以及全屏 Space、单/双 provider、不同健康等级和菜单栏刷新；将窗口拖出可见区域后，从菜单栏选择“显示额度窗口”或松开鼠标，确认其回到主屏幕右上。
 - 手动检查双时钟栏位于标题与首个 provider 之间、没有裁切或挤压，并确认中英文标签及分钟跳变正确；紧凑态不得出现时钟。
+- 手动检查重置绝对时间与倒计时在单/双额度布局中不被裁切；跨日标记在中英文下突出显示且同日隐藏。
 
 ## 未决问题
 
@@ -83,3 +90,7 @@
 - Test plan (2026-08-13): 先用固定冬季、夏季与跨日日期为双时钟文本写入 XCTest 并确认 RED，再接入 24pt 双时钟栏、展开窗口尺寸与中英文本地化；最后运行完整测试、安全检查和启动验证。
 - Implementation (2026-08-13): `WorldClockDisplay` 分别计算本机自动更新时区与 `America/Los_Angeles` 的本地化短星期和 24 小时时间；`FloatingQuotaView` 在标题与 provider 详情间显示分钟级更新的双时钟栏；`FloatingWindowLayout` 为展开面板增加 24pt；中英文资源与 README 同步。
 - Verification (2026-08-13): RED confirmed for the missing world-clock formatter, expanded-height reservation, localization keys, and cross-date weekday fields. `swift test` passed (73 tests); `./script/security_check.sh` passed (87 publishable files); `QUOTAPULSE_ALLOW_ADHOC=1 ./script/build_and_run.sh --verify` passed after the unsigned local environment lacked an Apple Development identity. Manual expanded-panel inspection passed in Simplified Chinese with the live cross-date output `当地时间 周四 00:28` and `美国时间 周三 09:28`; the row was correctly positioned without clipping or crowding. English labels are covered by localization tests.
+- Assumption (2026-08-13): 重置倒计时沿用现有 `relativeReset` 的向下取整和两段式单位；只显示未来时间。单额度使用完整单位，双额度窄列使用保留“还有/left”语义的紧凑单位。日期差标记以本机当地日期为唯一基准，仅在不同日时同时显示当地“今天”和美国“昨天/明天”。
+- Test plan (2026-08-13): 先为未来/到期倒计时、跨日昨天/今天及同日隐藏写入聚焦 XCTest 并确认 RED，再接入分钟级 SwiftUI 展示和双语强调标记；完成后运行完整验证并做中英文视觉检查。
+- Implementation (2026-08-13): `QuotaFormatters` 新增未来重置倒计时的完整与双额度紧凑格式；`QuotaRing` 通过分钟级 `TimelineView` 在绝对重置时间同行显示倒计时。`WorldClockDisplay` 以本机日期为基准计算昨天/今天/明天，`FloatingQuotaView` 以紧凑胶囊渲染跨日关系，并按内容自然宽度排列双时钟以避免英文裁切；中英文资源和 README 同步。
+- Verification (2026-08-13): RED 分别确认缺少倒计时 API、日期关系字段、紧凑格式与可测 SwiftUI 布局组件时的预期编译失败。聚焦 formatter/clock/layout 测试通过；`swift test` 通过（85 tests）；`./script/security_check.sh` 通过（88 publishable files）；双语 strings lint 与 `git diff --check` 通过；无 Apple Development identity 的本地环境使用 `QUOTAPULSE_ALLOW_ADHOC=1 ./script/build_and_run.sh --verify` 验证签名和启动。中英文单额度、双额度实际面板检查通过：绝对时间与倒计时同行且无裁切，英文双额度显示 `6d 23h left`，中文显示“还有6天23小时”；跨日双时钟完整显示本地“今天”和美国“昨天”胶囊，24pt 栏高及 356pt 面板宽度不变。

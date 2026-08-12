@@ -18,11 +18,11 @@ QuotaPulse is a native macOS menu bar and floating companion for Codex and Claud
 
 - Shows Codex and Claude together or independently; providers that are not signed in do not reserve space.
 - Detects the quota windows currently returned by each service. A temporarily unavailable five-hour window is hidden automatically and reappears when the service restores it.
-- Displays reset times, available Codex quota resets, and the expiration time of each reset opportunity when the service provides that data.
+- Displays reset times with a live two-unit countdown, available Codex quota resets, and the expiration time of each reset opportunity when the service provides that data.
 - Adds the continuously calculated planned remaining percentage to the weekly quota ring, with a setting to use all 7 days or pause the plan on weekends.
 - Detects local Codex and Claude activity and highlights only the provider currently in use.
 - Collapses into separate provider badges when the pointer leaves and expands into a unified detail panel on hover.
-- Shows the weekday and time for both the Mac's local zone and U.S. Pacific time in the expanded panel, with automatic daylight-saving adjustments.
+- Shows the weekday and time for both the Mac's local zone and U.S. Pacific time in the expanded panel, with automatic daylight-saving adjustments and Yesterday/Today/Tomorrow markers when the dates differ.
 - Restores the floating panel to a safe top-right position on the primary display whenever you choose “Show Quota Window” from the menu bar, and automatically recovers it after a drag leaves too little visible to grab.
 - Adapts the background to quota health and current local weather.
 - Colors each quota ring independently: blue above 50%, amber from 10% through 50%, and coral at 10% or below.

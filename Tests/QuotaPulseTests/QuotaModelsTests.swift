@@ -375,6 +375,70 @@ final class QuotaModelsTests: XCTestCase {
         }
     }
 
+    @MainActor
+    func testResetCountdownFloorsDaysAndHoursInBothLanguages() {
+        let language = LanguageSettings()
+        let originalLanguage = language.language
+        defer { language.language = originalLanguage }
+        let now = Date(timeIntervalSince1970: 2_000_000_000)
+        let resetAt = now.addingTimeInterval((4 * 24 + 9) * 60 * 60 + 30 * 60)
+
+        language.language = .simplifiedChinese
+        XCTAssertEqual(
+            QuotaFormatters.resetCountdown(from: resetAt, language: language, now: now),
+            "还有 4 天 9 小时"
+        )
+
+        language.language = .english
+        XCTAssertEqual(
+            QuotaFormatters.resetCountdown(from: resetAt, language: language, now: now),
+            "4 days 9 hours left"
+        )
+    }
+
+    @MainActor
+    func testResetCountdownUsesHoursMinutesAndMinutesOnly() {
+        let language = LanguageSettings()
+        let originalLanguage = language.language
+        defer { language.language = originalLanguage }
+        let now = Date(timeIntervalSince1970: 2_000_000_000)
+
+        language.language = .simplifiedChinese
+        XCTAssertEqual(
+            QuotaFormatters.resetCountdown(
+                from: now.addingTimeInterval(2 * 60 * 60 + 45 * 60 + 59),
+                language: language,
+                now: now
+            ),
+            "还有 2 小时 45 分钟"
+        )
+
+        language.language = .english
+        XCTAssertEqual(
+            QuotaFormatters.resetCountdown(
+                from: now.addingTimeInterval(42 * 60 + 59),
+                language: language,
+                now: now
+            ),
+            "42 minutes left"
+        )
+    }
+
+    @MainActor
+    func testResetCountdownHidesAtAndAfterReset() {
+        let language = LanguageSettings()
+        let now = Date(timeIntervalSince1970: 2_000_000_000)
+
+        XCTAssertNil(QuotaFormatters.resetCountdown(from: now, language: language, now: now))
+        XCTAssertNil(
+            QuotaFormatters.resetCountdown(
+                from: now.addingTimeInterval(-1),
+                language: language,
+                now: now
+            )
+        )
+    }
+
     func testQuotaNotificationDetectsCrossedTenPercentBoundary() {
         XCTAssertEqual(
             QuotaNotificationPolicy.crossedThreshold(previous: 0.91, current: 0.89),

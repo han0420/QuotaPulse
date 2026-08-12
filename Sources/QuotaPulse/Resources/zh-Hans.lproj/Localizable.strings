@@ -22,6 +22,9 @@
 "header.switchLanguage" = "切换语言";
 "clock.local" = "当地时间";
 "clock.unitedStates" = "美国时间";
+"clock.date.yesterday" = "昨天";
+"clock.date.today" = "今天";
+"clock.date.tomorrow" = "明天";
 "status.cached" = "部分数据暂存";
 "status.healthy" = "状态健康";
 "status.warning" = "需要留意";
@@ -172,6 +175,10 @@
 "time.daysHours" = "%d 天 %d 小时";
 "time.hoursMinutes" = "%d 小时 %d 分钟";
 "time.minutes" = "%d 分钟";
+"time.remaining" = "还有 %@";
+"time.compact.daysHoursRemaining" = "还有%d天%d小时";
+"time.compact.hoursMinutesRemaining" = "还有%d小时%d分钟";
+"time.compact.minutesRemaining" = "还有%d分钟";
 "settings.deepSeek" = "AI API 额度";
 "settings.deepSeek.enabled" = "显示 DeepSeek 余额";
 "settings.deepSeek.apiKey" = "API Key";

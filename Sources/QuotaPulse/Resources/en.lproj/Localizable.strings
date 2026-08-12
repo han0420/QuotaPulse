@@ -22,6 +22,9 @@
 "header.switchLanguage" = "Switch language";
 "clock.local" = "Local time";
 "clock.unitedStates" = "U.S. time";
+"clock.date.yesterday" = "Yesterday";
+"clock.date.today" = "Today";
+"clock.date.tomorrow" = "Tomorrow";
 "status.cached" = "Using cached data";
 "status.healthy" = "Healthy";
 "status.warning" = "Needs attention";
@@ -172,6 +175,10 @@
 "time.daysHours" = "%d days %d hours";
 "time.hoursMinutes" = "%d hours %d minutes";
 "time.minutes" = "%d minutes";
+"time.remaining" = "%@ left";
+"time.compact.daysHoursRemaining" = "%dd %dh left";
+"time.compact.hoursMinutesRemaining" = "%dh %dm left";
+"time.compact.minutesRemaining" = "%dm left";
 "settings.deepSeek" = "AI API balance";
 "settings.deepSeek.enabled" = "Show DeepSeek balance";
 "settings.deepSeek.apiKey" = "API Key";
